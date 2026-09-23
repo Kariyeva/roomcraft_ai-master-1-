@@ -12,13 +12,15 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
 
-if (!serviceAccountJson) {
-  throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON is missing");
+if (!serviceAccountPath) {
+  throw new Error("FIREBASE_SERVICE_ACCOUNT_PATH is missing in .env");
 }
 
-const serviceAccount = JSON.parse(serviceAccountJson);
+const serviceAccount = require(
+  path.resolve(__dirname, serviceAccountPath)
+);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),

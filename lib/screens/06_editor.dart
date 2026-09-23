@@ -117,8 +117,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
   String get _backendBaseUrl => _useLocalBackend
       ? 'http://localhost:3000'
-      : 'https://roomcraft-backend-pugy.onrender.com';
-
+      : 'https://roomcraftai-master-1-production.up.railway.app';
   Future<String?> _removeBackgroundWithReplicate(Uint8List imageBytes) async {
     try {
       final uri = Uri.parse('$_backendBaseUrl/remove-background');
