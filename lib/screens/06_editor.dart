@@ -113,7 +113,7 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
-  static const bool _useLocalBackend = true;
+  static const bool _useLocalBackend = false;
 
   String get _backendBaseUrl => _useLocalBackend
       ? 'http://localhost:3000'
@@ -189,58 +189,100 @@ class _EditorScreenState extends State<EditorScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              backgroundColor: const Color(0xFFF6F7FB),
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(26),
               ),
               title: const Text(
                 'Добавить предмет',
-                style: TextStyle(fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 28,
+                  color: Color(0xFF1F2A44),
+                ),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Название предмета',
-                      border: OutlineInputBorder(),
+              content: SizedBox(
+                width: 460,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: nameController,
+                      style: const TextStyle(color: Color(0xFF1F2A44)),
+                      decoration: InputDecoration(
+                        labelText: 'Название предмета',
+                        labelStyle: const TextStyle(color: Color(0xFF5B6474)),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  DropdownButtonFormField<String>(
-                    value: category,
-                    decoration: const InputDecoration(
-                      labelText: 'Категория',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: category,
+                      style: const TextStyle(color: Color(0xFF1F2A44)),
+                      decoration: InputDecoration(
+                        labelText: 'Категория',
+                        labelStyle: const TextStyle(color: Color(0xFF5B6474)),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      items: itemsByTab.keys
+                          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() {
+                          category = value;
+                        });
+                      },
                     ),
-                    items: itemsByTab.keys
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setDialogState(() {
-                        category = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'После сохранения фон будет автоматически удалён через ИИ.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                  ),
-                ],
+                    const SizedBox(height: 18),
+                    const Text(
+                      'После сохранения фон будет автоматически удалён через ИИ.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                    ),
+                  ],
+                ),
               ),
+              actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Отмена'),
+                  child: const Text(
+                    'Отмена',
+                    style: TextStyle(
+                      color: Color(0xFF2E90FA),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context, true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2E90FA),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                  child: const Text('Сохранить'),
+                  child: const Text(
+                    'Сохранить',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -493,263 +535,299 @@ class _EditorScreenState extends State<EditorScreen> {
     final bool canSave = selectedImageBytes != null && placedItems.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF6F7FB),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          "Редактор комнаты",
-          style: TextStyle(
-            color: Color(0xFF111827),
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        actions: [
-          IconButton(
-            onPressed: _undoLastItem,
-            icon: const Icon(Icons.undo, color: Color(0xFF111827)),
-          ),
-        ],
-      ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(26),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFF5F8FF),
+                    Color(0xFFEAF3FF),
+                    Color(0xFFF3F0FF),
+                  ],
+                ),
               ),
-              child: selectedImageBytes == null
-                  ? InkWell(
-                      onTap: _pickImage,
-                      borderRadius: BorderRadius.circular(26),
-                      child: const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.cloud_upload_outlined,
-                                size: 42,
-                                color: Color(0xFF2E90FA),
-                              ),
-                              SizedBox(height: 14),
-                              Text(
-                                "Нажмите, чтобы загрузить фото\nкомнаты для ручного редактирования",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF111827),
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "PNG, JPG или HEIC",
-                                style: TextStyle(color: Color(0xFF9CA3AF)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(26),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final areaSize = Size(
-                            constraints.maxWidth,
-                            constraints.maxHeight,
-                          );
-
-                          return Stack(
-                            children: [
-                              Positioned.fill(
-                                child: Image.memory(
-                                  selectedImageBytes!,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              Positioned(
-                                top: 12,
-                                right: 12,
-                                child: Row(
-                                  children: [
-                                    _topActionButton(
-                                      icon: Icons.delete_outline,
-                                      onTap: _removeImage,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _topActionButton(
-                                      icon: Icons.edit_outlined,
-                                      onTap: _pickImage,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              ...placedItems.map(
-                                (item) => Positioned(
-                                  left: item.x * areaSize.width,
-                                  top: item.y * areaSize.height,
-                                  child: GestureDetector(
-                                    onTap: () => _selectPlacedItem(item.id),
-                                    onPanUpdate: (details) {
-                                      _movePlacedItem(
-                                        item.id,
-                                        details.delta,
-                                        areaSize,
-                                      );
-                                    },
-                                    child: _draggablePlacedObject(
-                                      item: item,
-                                      onDelete: () =>
-                                          _removePlacedItem(item.id),
-                                      onIncrease: () =>
-                                          _resizePlacedItem(item.id, 0.1),
-                                      onDecrease: () =>
-                                          _resizePlacedItem(item.id, -0.1),
-                                      onRotate: () =>
-                                          _rotatePlacedItem(item.id),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+          Positioned(
+            top: -60,
+            right: -40,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF7AB6FF).withOpacity(0.18),
+              ),
             ),
+          ),
+          Positioned(
+            bottom: 80,
+            left: -80,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFB39DFF).withOpacity(0.14),
+              ),
+            ),
+          ),
+          SafeArea(
             child: Column(
               children: [
-                if (_selectedPlacedItem != null) ...[
-                  _objectAdjustPanel(_selectedPlacedItem!),
-                  const SizedBox(height: 12),
-                ],
-                Row(
-                  children: [
-                    _tab(
-                      "Мебель",
-                      selected: selectedTab == 'Мебель',
-                      onTap: () => setState(() => selectedTab = 'Мебель'),
+                AppBar(
+                  automaticallyImplyLeading: false,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  title: const Text(
+                    'Редактор комнаты',
+                    style: TextStyle(
+                      color: Color(0xFF111827),
+                      fontWeight: FontWeight.w800,
                     ),
-                    const SizedBox(width: 8),
-                    _tab(
-                      "Декор",
-                      selected: selectedTab == 'Декор',
-                      onTap: () => setState(() => selectedTab = 'Декор'),
-                    ),
-                    const SizedBox(width: 8),
-                    _tab(
-                      "Свет",
-                      selected: selectedTab == 'Свет',
-                      onTap: () => setState(() => selectedTab = 'Свет'),
-                    ),
-                    const SizedBox(width: 8),
-                    _tab(
-                      "Текстиль",
-                      selected: selectedTab == 'Текстиль',
-                      onTap: () => setState(() => selectedTab = 'Текстиль'),
+                  ),
+                  actions: [
+                    IconButton(
+                      onPressed: _undoLastItem,
+                      icon: const Icon(Icons.undo, color: Color(0xFF111827)),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: OutlinedButton.icon(
-                    onPressed: _pickCustomItemImage,
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF2E90FA)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.78),
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(color: const Color(0xFFDCE9F8)),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x0F2E90FA),
+                          blurRadius: 16,
+                          offset: Offset(0, 12),
+                        ),
+                      ],
                     ),
-                    icon: const Icon(
-                      Icons.add_photo_alternate_outlined,
-                      color: Color(0xFF2E90FA),
-                    ),
-                    label: Text(
-                      "Добавить предмет в раздел «$selectedTab»",
-                      style: const TextStyle(
-                        color: Color(0xFF2E90FA),
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                    child: selectedImageBytes == null
+                        ? _HoverLift(
+                            child: InkWell(
+                              onTap: _pickImage,
+                              borderRadius: BorderRadius.circular(26),
+                              child: const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(24),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.cloud_upload_outlined,
+                                        size: 42,
+                                        color: Color(0xFF2E90FA),
+                                      ),
+                                      SizedBox(height: 14),
+                                      Text(
+                                        'Нажмите, чтобы загрузить фото\nкомнаты для ручного редактирования',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF111827),
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'PNG, JPG или HEIC',
+                                        style: TextStyle(color: Color(0xFF9CA3AF)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(26),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final areaSize = Size(
+                                  constraints.maxWidth,
+                                  constraints.maxHeight,
+                                );
+
+                                return Stack(
+                                  children: [
+                                    Positioned.fill(
+                                      child: Image.memory(
+                                        selectedImageBytes!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 12,
+                                      right: 12,
+                                      child: Row(
+                                        children: [
+                                          _topActionButton(
+                                            icon: Icons.delete_outline,
+                                            onTap: _removeImage,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          _topActionButton(
+                                            icon: Icons.edit_outlined,
+                                            onTap: _pickImage,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    ...placedItems.map(
+                                      (item) => Positioned(
+                                        left: item.x * areaSize.width,
+                                        top: item.y * areaSize.height,
+                                        child: GestureDetector(
+                                          onTap: () => _selectPlacedItem(item.id),
+                                          onPanUpdate: (details) {
+                                            _movePlacedItem(
+                                              item.id,
+                                              details.delta,
+                                              areaSize,
+                                            );
+                                          },
+                                          child: _draggablePlacedObject(
+                                            item: item,
+                                            onDelete: () => _removePlacedItem(item.id),
+                                            onIncrease: () => _resizePlacedItem(item.id, 0.1),
+                                            onDecrease: () => _resizePlacedItem(item.id, -0.1),
+                                            onRotate: () => _rotatePlacedItem(item.id),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 104,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.78),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                    border: const Border.fromBorderSide(BorderSide(color: Color(0xFFDCE9F8))),
+                  ),
+                  child: Column(
                     children: [
-                      ...currentItems.map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: _catalogIconItem(
-                            title: item.title,
-                            icon: item.icon,
-                            onTap: () => _addItem(item),
+                      if (_selectedPlacedItem != null) ...[
+                        _objectAdjustPanel(_selectedPlacedItem!),
+                        const SizedBox(height: 12),
+                      ],
+                      Row(
+                        children: [
+                          _tab('Мебель', selected: selectedTab == 'Мебель', onTap: () => setState(() => selectedTab = 'Мебель')),
+                          const SizedBox(width: 8),
+                          _tab('Декор', selected: selectedTab == 'Декор', onTap: () => setState(() => selectedTab = 'Декор')),
+                          const SizedBox(width: 8),
+                          _tab('Свет', selected: selectedTab == 'Свет', onTap: () => setState(() => selectedTab = 'Свет')),
+                          const SizedBox(width: 8),
+                          _tab('Текстиль', selected: selectedTab == 'Текстиль', onTap: () => setState(() => selectedTab = 'Текстиль')),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: _HoverLift(
+                          child: OutlinedButton.icon(
+                            onPressed: _pickCustomItemImage,
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFF2E90FA)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            icon: const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF2E90FA)),
+                            label: Text(
+                              'Добавить предмет в раздел «$selectedTab»',
+                              style: const TextStyle(
+                                color: Color(0xFF2E90FA),
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                      ...currentCustomItems.map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: _catalogCustomItem(
-                            item: item,
-                            onTap: () => _addCustomItem(item),
-                            onDelete: () => _deleteCustomItem(item),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 104,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            ...currentItems.map(
+                              (item) => Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: _catalogIconItem(
+                                  title: item.title,
+                                  icon: item.icon,
+                                  onTap: () => _addItem(item),
+                                ),
+                              ),
+                            ),
+                            ...currentCustomItems.map(
+                              (item) => Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: _catalogCustomItem(
+                                  item: item,
+                                  onTap: () => _addCustomItem(item),
+                                  onDelete: () => _deleteCustomItem(item),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _HoverLift(
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton.icon(
+                            onPressed: canSave
+                                ? () {
+                                    Navigator.of(context).pushNamed(
+                                      '/result',
+                                      arguments: {
+                                        'style': 'Ручной режим',
+                                        'imagePath': null,
+                                        'imageBytes': selectedImageBytes,
+                                        'imageName': selectedImageName,
+                                        'placedItems': _buildPlacedItemsArgs(),
+                                      },
+                                    );
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2E90FA),
+                              disabledBackgroundColor: const Color(0xFFBFD9F8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                            ),
+                            icon: const Icon(Icons.save),
+                            label: const Text(
+                              'Сохранить комнату',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton.icon(
-                    onPressed: canSave
-                        ? () {
-                            Navigator.of(context).pushNamed(
-                              '/result',
-                              arguments: {
-                                'style': 'Ручной режим',
-                                'imagePath': null,
-                                'imageBytes': selectedImageBytes,
-                                'imageName': selectedImageName,
-                                'placedItems': _buildPlacedItemsArgs(),
-                              },
-                            );
-                          }
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E90FA),
-                      disabledBackgroundColor: const Color(0xFFBFD9F8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    icon: const Icon(Icons.save),
-                    label: const Text(
-                      "Сохранить комнату",
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
                   ),
                 ),
               ],
@@ -1004,22 +1082,24 @@ class _EditorScreenState extends State<EditorScreen> {
     required VoidCallback onTap,
   }) {
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFF111827) : const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: selected ? Colors.white : const Color(0xFF111827),
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
+      child: _HoverLift(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: selected ? const Color(0xFF111827) : const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: selected ? Colors.white : const Color(0xFF111827),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
             ),
           ),
         ),
@@ -1032,28 +1112,37 @@ class _EditorScreenState extends State<EditorScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        width: 96,
-        height: 96,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF6F7FB),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFEEF2F7)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: const Color(0xFF111827)),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
-            ),
-          ],
+    return _HoverLift(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.82),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFEEF2F7)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0F2E90FA),
+                blurRadius: 10,
+                offset: Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: const Color(0xFF111827)),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1151,6 +1240,33 @@ class _EditorItem {
   final IconData icon;
 
   const _EditorItem(this.title, this.icon);
+}
+
+class _HoverLift extends StatefulWidget {
+  final Widget child;
+
+  const _HoverLift({required this.child});
+
+  @override
+  State<_HoverLift> createState() => _HoverLiftState();
+}
+
+class _HoverLiftState extends State<_HoverLift> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
+        child: widget.child,
+      ),
+    );
+  }
 }
 
 class _PlacedItem {

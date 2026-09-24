@@ -34,168 +34,254 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: const Color(0xFFF6F7FB),
-        elevation: 0,
-        title: const Text(
-          "Выберите режим",
-          style: TextStyle(
-            color: Color(0xFF111827),
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const SplashScreen()),
-                (route) => false,
-              );
-            },
-            icon: const Icon(Icons.login, color: Color(0xFF111827)),
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-            },
-            icon: const Icon(Icons.person, color: Color(0xFF2E90FA)),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refreshWorks,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            const SizedBox(height: 6),
-            const Text(
-              "Как вы хотите оформить комнату?",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF111827),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFF4F8FF),
+                    Color(0xFFE9F2FF),
+                    Color(0xFFF2EEFF),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 6),
-            const Text(
-              "Начните с ИИ или создайте вручную",
-              style: TextStyle(color: Color(0xFF6B7280)),
-            ),
-            const SizedBox(height: 16),
-
-            _bigCard(
-              title: "ИИ дизайн комнаты",
-              subtitle:
-                  "Загрузите фото, и ИИ создаст\nготовый интерьер за секунды.",
-              color: const Color(0xFF2E90FA),
-              onTap: () async {
-                await Navigator.pushNamed(context, '/ai_create');
-                setState(() {});
-              },
-            ),
-
-            const SizedBox(height: 14),
-
-            _smallCard(
-              title: "Ручной режим",
-              subtitle: "Расставляйте мебель и декор в\nудобном 2D-редакторе.",
-              onTap: () async {
-                await Navigator.pushNamed(context, '/editor');
-                setState(() {});
-              },
-            ),
-
-            const SizedBox(height: 22),
-            const Text(
-              "ПОСЛЕДНИЕ РАБОТЫ",
-              style: TextStyle(
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.w700,
+          ),
+          Positioned(
+            top: -60,
+            right: -30,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF7AB6FF).withOpacity(0.22),
               ),
             ),
-            const SizedBox(height: 10),
-
-            StreamBuilder<User?>(
-              stream: FirebaseAuth.instance.authStateChanges(),
-              builder: (context, authSnapshot) {
-                final user = authSnapshot.data;
-
-                if (!_isRegisteredUser(user)) {
-                  return Row(
+          ),
+          Positioned(
+            bottom: 80,
+            left: -70,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF9C8CFF).withOpacity(0.15),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 140,
+            right: 40,
+            child: Opacity(
+              opacity: 0.08,
+              child: Transform.rotate(
+                angle: 0.28,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(child: _placeholderBox()),
-                      const SizedBox(width: 12),
-                      Expanded(child: _placeholderBox()),
-                    ],
-                  );
-                }
-
-                return StreamBuilder<List<SavedWorkWithId>>(
-                  stream: SavedWorksService.getWorksStream(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
-                          child: CircularProgressIndicator(),
+                      Icon(Icons.auto_awesome_rounded, color: Color(0xFF2E90FA), size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'RoomCraft AI',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
                         ),
-                      );
-                    }
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                AppBar(
+                  automaticallyImplyLeading: false,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  title: const Text(
+                    'Выберите режим',
+                    style: TextStyle(
+                      color: Color(0xFF111827),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  actions: [
+                    IconButton(
+                      onPressed: () {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SplashScreen()),
+                          (route) => false,
+                        );
+                      },
+                      icon: const Icon(Icons.login, color: Color(0xFF111827)),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.person, color: Color(0xFF2E90FA)),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _refreshWorks,
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Как вы хотите оформить комнату?',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Начните с ИИ или создайте вручную',
+                          style: TextStyle(color: Color(0xFF6B7280)),
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            _featurePill(icon: Icons.auto_awesome, label: 'ИИ-помощник'),
+                            _featurePill(icon: Icons.photo_library_outlined, label: 'Фото комнаты'),
+                            _featurePill(icon: Icons.attach_money_rounded, label: 'Бюджет'),
+                            _featurePill(icon: Icons.compare_arrows_rounded, label: '3 варианта'),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _bigCard(
+                          title: 'ИИ дизайн комнаты',
+                          subtitle: 'Загрузите фото, и ИИ создаст\nготовый интерьер за секунды.',
+                          color: const Color(0xFF2E90FA),
+                          onTap: () async {
+                            await Navigator.pushNamed(context, '/ai_create');
+                            setState(() {});
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                        _smallCard(
+                          title: 'Ручной режим',
+                          subtitle: 'Расставляйте мебель и декор в\nудобном 2D-редакторе.',
+                          onTap: () async {
+                            await Navigator.pushNamed(context, '/editor');
+                            setState(() {});
+                          },
+                        ),
+                        const SizedBox(height: 22),
+                        const Text(
+                          'ПОСЛЕДНИЕ РАБОТЫ',
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        StreamBuilder<User?>(
+                          stream: FirebaseAuth.instance.authStateChanges(),
+                          builder: (context, authSnapshot) {
+                            final user = authSnapshot.data;
 
-                    final savedWorks = snapshot.data ?? [];
+                            if (!_isRegisteredUser(user)) {
+                              return Row(
+                                children: [
+                                  Expanded(child: _placeholderBox()),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _placeholderBox()),
+                                ],
+                              );
+                            }
 
-                    if (savedWorks.isEmpty) {
-                      return Row(
-                        children: [
-                          Expanded(child: _placeholderBox()),
-                          const SizedBox(width: 12),
-                          Expanded(child: _placeholderBox()),
-                        ],
-                      );
-                    }
+                            return StreamBuilder<List<SavedWorkWithId>>(
+                              stream: SavedWorksService.getWorksStream(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 24),
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
 
-                    return Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: savedWorks.map((item) {
-                        final work = item.work;
+                                final savedWorks = snapshot.data ?? [];
 
-                        return _savedWorkCard(
-                          context: context,
-                          work: work,
-                          onDelete: () => _deleteWork(item.id),
-                          onOpen: () {
-                            Navigator.pushNamed(
-                              context,
-                              '/result',
-                              arguments: {
-                                'style': work.style,
-                                'imagePath': work.imagePath,
-                                'imageBytes': work.imageBase64.isNotEmpty
-                                    ? base64Decode(work.imageBase64)
-                                    : null,
-                                'prompt': work.prompt,
-                                'placedItems': work.placedItems,
+                                if (savedWorks.isEmpty) {
+                                  return Row(
+                                    children: [
+                                      Expanded(child: _placeholderBox()),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: _placeholderBox()),
+                                    ],
+                                  );
+                                }
+
+                                return Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  children: savedWorks.map((item) {
+                                    final work = item.work;
+
+                                    return _savedWorkCard(
+                                      context: context,
+                                      work: work,
+                                      onDelete: () => _deleteWork(item.id),
+                                      onOpen: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/result',
+                                          arguments: {
+                                            'style': work.style,
+                                            'imagePath': work.imagePath,
+                                            'imageBytes': work.imageBase64.isNotEmpty
+                                                ? base64Decode(work.imageBase64)
+                                                : null,
+                                            'prompt': work.prompt,
+                                            'placedItems': work.placedItems,
+                                          },
+                                        );
+                                      },
+                                    );
+                                  }).toList(),
+                                );
                               },
                             );
                           },
-                        );
-                      }).toList(),
-                    );
-                  },
-                );
-              },
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 18),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -204,11 +290,66 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
     return Container(
       height: 140,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.75),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFDEE9F7)),
       ),
       child: const Center(
         child: Icon(Icons.image_outlined, color: Color(0xFFC7CEDB), size: 36),
+      ),
+    );
+  }
+
+  static Widget _HoverLift({required Widget child}) {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool hovered = false;
+
+        return MouseRegion(
+          onEnter: (_) => setState(() => hovered = true),
+          onExit: (_) => setState(() => hovered = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            transform: Matrix4.translationValues(0, hovered ? -2 : 0, 0),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  static Widget _featurePill({required IconData icon, required String label}) {
+    return _HoverLift(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.78),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: const Color(0xFFDEE6F2)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x123A8CFF),
+              blurRadius: 12,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: const Color(0xFF2E90FA)),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF1F2A44),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -539,58 +680,74 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(Icons.auto_awesome, color: Colors.white),
+    return _HoverLift(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color,
+                Color.alphaBlend(const Color(0xFF1E7AE7).withOpacity(0.30), color),
+              ],
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1A2E90FA),
+                blurRadius: 18,
+                offset: Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.20),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.auto_awesome, color: Colors.white),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    subtitle,
-                    style: TextStyle(color: Colors.white.withOpacity(0.92)),
-                  ),
-                ],
+                    const SizedBox(height: 6),
+                    Text(
+                      subtitle,
+                      style: TextStyle(color: Colors.white.withOpacity(0.92)),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
+              const SizedBox(width: 10),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.chevron_right, color: Color(0xFF2E90FA)),
               ),
-              child: const Icon(Icons.chevron_right, color: Color(0xFF2E90FA)),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -601,58 +758,68 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(14),
+    return _HoverLift(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.82),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0xFFDEE9F7)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0F2E90FA),
+                blurRadius: 12,
+                offset: Offset(0, 8),
               ),
-              child: const Icon(Icons.edit, color: Color(0xFF111827)),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF111827),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.edit, color: Color(0xFF111827)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF111827),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(color: Color(0xFF6B7280)),
-                  ),
-                ],
+                    const SizedBox(height: 6),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(color: Color(0xFF6B7280)),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: const Color(0xFF111827),
-                borderRadius: BorderRadius.circular(18),
+              const SizedBox(width: 10),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111827),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(Icons.chevron_right, color: Colors.white),
               ),
-              child: const Icon(Icons.chevron_right, color: Colors.white),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
