@@ -43,242 +43,226 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFFF4F8FF),
-                    Color(0xFFE9F2FF),
-                    Color(0xFFF2EEFF),
+                    Color(0xFF050B16),
+                    Color(0xFF0A1730),
+                    Color(0xFF091622),
                   ],
                 ),
               ),
             ),
           ),
           Positioned(
-            top: -60,
-            right: -30,
+            top: -120,
+            right: -80,
             child: Container(
-              width: 220,
-              height: 220,
+              width: 330,
+              height: 330,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF7AB6FF).withOpacity(0.22),
+                color: const Color(0xFF3AA0FF).withOpacity(0.22),
               ),
             ),
           ),
           Positioned(
-            bottom: 80,
-            left: -70,
+            bottom: -100,
+            left: -80,
             child: Container(
-              width: 260,
-              height: 260,
+              width: 340,
+              height: 340,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF9C8CFF).withOpacity(0.15),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 140,
-            right: 40,
-            child: Opacity(
-              opacity: 0.08,
-              child: Transform.rotate(
-                angle: 0.28,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.auto_awesome_rounded, color: Color(0xFF2E90FA), size: 22),
-                      SizedBox(width: 8),
-                      Text(
-                        'RoomCraft AI',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                color: const Color(0xFF5B7BFF).withOpacity(0.18),
               ),
             ),
           ),
           SafeArea(
-            child: Column(
-              children: [
-                AppBar(
-                  automaticallyImplyLeading: false,
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  title: const Text(
-                    'Выберите режим',
-                    style: TextStyle(
-                      color: Color(0xFF111827),
-                      fontWeight: FontWeight.w800,
-                    ),
+            child: RefreshIndicator(
+              onRefresh: _refreshWorks,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
+                children: [
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.white.withOpacity(0.12)),
+                        ),
+                        child: const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.person_outline, color: Colors.white),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (_) => const SplashScreen()),
+                            (route) => false,
+                          );
+                        },
+                        icon: const Icon(Icons.logout_rounded, color: Colors.white70),
+                      ),
+                    ],
                   ),
-                  actions: [
-                    IconButton(
-                      onPressed: () {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (_) => const SplashScreen()),
-                          (route) => false,
-                        );
-                      },
-                      icon: const Icon(Icons.login, color: Color(0xFF111827)),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                        );
-                      },
-                      icon: const Icon(Icons.person, color: Color(0xFF2E90FA)),
-                    ),
-                  ],
-                ),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _refreshWorks,
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Как вы хотите оформить комнату?',
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Column(
+                      children: const [
+                        Text(
+                          'RoomCraft AI',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 28,
+                            letterSpacing: 1.5,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF111827),
+                            color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Начните с ИИ или создайте вручную',
-                          style: TextStyle(color: Color(0xFF6B7280)),
-                        ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            _featurePill(icon: Icons.auto_awesome, label: 'ИИ-помощник'),
-                            _featurePill(icon: Icons.photo_library_outlined, label: 'Фото комнаты'),
-                            _featurePill(icon: Icons.attach_money_rounded, label: 'Бюджет'),
-                            _featurePill(icon: Icons.compare_arrows_rounded, label: '3 варианта'),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _bigCard(
-                          title: 'ИИ дизайн комнаты',
-                          subtitle: 'Загрузите фото, и ИИ создаст\nготовый интерьер за секунды.',
-                          color: const Color(0xFF2E90FA),
-                          onTap: () async {
-                            await Navigator.pushNamed(context, '/ai_create');
-                            setState(() {});
-                          },
-                        ),
-                        const SizedBox(height: 14),
-                        _smallCard(
-                          title: 'Ручной режим',
-                          subtitle: 'Расставляйте мебель и декор в\nудобном 2D-редакторе.',
-                          onTap: () async {
-                            await Navigator.pushNamed(context, '/editor');
-                            setState(() {});
-                          },
-                        ),
-                        const SizedBox(height: 22),
-                        const Text(
-                          'ПОСЛЕДНИЕ РАБОТЫ',
+                        SizedBox(height: 8),
+                        Text(
+                          'Создавайте интерьер мечты с ИИ и вручную',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Color(0xFF6B7280),
-                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFB5C5DA),
+                            fontSize: 15,
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        StreamBuilder<User?>(
-                          stream: FirebaseAuth.instance.authStateChanges(),
-                          builder: (context, authSnapshot) {
-                            final user = authSnapshot.data;
-
-                            if (!_isRegisteredUser(user)) {
-                              return Row(
-                                children: [
-                                  Expanded(child: _placeholderBox()),
-                                  const SizedBox(width: 12),
-                                  Expanded(child: _placeholderBox()),
-                                ],
-                              );
-                            }
-
-                            return StreamBuilder<List<SavedWorkWithId>>(
-                              stream: SavedWorksService.getWorksStream(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.waiting) {
-                                  return const Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(vertical: 24),
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  );
-                                }
-
-                                final savedWorks = snapshot.data ?? [];
-
-                                if (savedWorks.isEmpty) {
-                                  return Row(
-                                    children: [
-                                      Expanded(child: _placeholderBox()),
-                                      const SizedBox(width: 12),
-                                      Expanded(child: _placeholderBox()),
-                                    ],
-                                  );
-                                }
-
-                                return Wrap(
-                                  spacing: 12,
-                                  runSpacing: 12,
-                                  children: savedWorks.map((item) {
-                                    final work = item.work;
-
-                                    return _savedWorkCard(
-                                      context: context,
-                                      work: work,
-                                      onDelete: () => _deleteWork(item.id),
-                                      onOpen: () {
-                                        Navigator.pushNamed(
-                                          context,
-                                          '/result',
-                                          arguments: {
-                                            'style': work.style,
-                                            'imagePath': work.imagePath,
-                                            'imageBytes': work.imageBase64.isNotEmpty
-                                                ? base64Decode(work.imageBase64)
-                                                : null,
-                                            'prompt': work.prompt,
-                                            'placedItems': work.placedItems,
-                                          },
-                                        );
-                                      },
-                                    );
-                                  }).toList(),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 18),
                       ],
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 26),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      _featurePill(icon: Icons.auto_awesome, label: 'ИИ-помощник'),
+                      _featurePill(icon: Icons.photo_library_outlined, label: 'Фото комнаты'),
+                      _featurePill(icon: Icons.attach_money_rounded, label: 'Бюджет'),
+                      _featurePill(icon: Icons.compare_arrows_rounded, label: '3 варианта'),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Wrap(
+                    spacing: 14,
+                    runSpacing: 14,
+                    children: [
+                      _bigCard(
+                        title: 'Создать с помощью ИИ',
+                        subtitle: 'Загрузите комнату, выберите стиль и получите готовый интерьер за минуты.',
+                        color: const Color(0xFF2E90FA),
+                        onTap: () async {
+                          await Navigator.pushNamed(context, '/ai_create');
+                          setState(() {});
+                        },
+                      ),
+                      _smallCard(
+                        title: 'Ручной редактор',
+                        subtitle: 'Расставляйте мебель и декор вручную в 2D-режиме.',
+                        onTap: () async {
+                          await Navigator.pushNamed(context, '/editor');
+                          setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+                  const Text(
+                    'Последние проекты',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  StreamBuilder<User?>(
+                    stream: FirebaseAuth.instance.authStateChanges(),
+                    builder: (context, authSnapshot) {
+                      final user = authSnapshot.data;
+
+                      if (!_isRegisteredUser(user)) {
+                        return Row(
+                          children: [
+                            Expanded(child: _placeholderBox()),
+                            const SizedBox(width: 12),
+                            Expanded(child: _placeholderBox()),
+                          ],
+                        );
+                      }
+
+                      return StreamBuilder<List<SavedWorkWithId>>(
+                        stream: SavedWorksService.getWorksStream(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 24),
+                                child: CircularProgressIndicator(color: Colors.white),
+                              ),
+                            );
+                          }
+
+                          final savedWorks = snapshot.data ?? [];
+
+                          if (savedWorks.isEmpty) {
+                            return Row(
+                              children: [
+                                Expanded(child: _placeholderBox()),
+                                const SizedBox(width: 12),
+                                Expanded(child: _placeholderBox()),
+                              ],
+                            );
+                          }
+
+                          return Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: savedWorks.map((item) {
+                              final work = item.work;
+                              return _savedWorkCard(
+                                context: context,
+                                work: work,
+                                onDelete: () => _deleteWork(item.id),
+                                onOpen: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/result',
+                                    arguments: {
+                                      'style': work.style,
+                                      'imagePath': work.imagePath,
+                                      'imageBytes': work.imageBase64.isNotEmpty
+                                          ? base64Decode(work.imageBase64)
+                                          : null,
+                                      'prompt': work.prompt,
+                                      'placedItems': work.placedItems,
+                                    },
+                                  );
+                                },
+                              );
+                            }).toList(),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -288,14 +272,14 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
 
   static Widget _placeholderBox() {
     return Container(
-      height: 140,
+      height: 150,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.75),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFDEE9F7)),
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.12)),
       ),
       child: const Center(
-        child: Icon(Icons.image_outlined, color: Color(0xFFC7CEDB), size: 36),
+        child: Icon(Icons.image_outlined, color: Color(0xFFB5C5DA), size: 36),
       ),
     );
   }
@@ -324,26 +308,19 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.78),
+          color: Colors.white.withOpacity(0.06),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: const Color(0xFFDEE6F2)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x123A8CFF),
-              blurRadius: 12,
-              offset: Offset(0, 6),
-            ),
-          ],
+          border: Border.all(color: Colors.white.withOpacity(0.14)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: const Color(0xFF2E90FA)),
+            Icon(icon, size: 15, color: Colors.white),
             const SizedBox(width: 8),
             Text(
               label,
               style: const TextStyle(
-                color: Color(0xFF1F2A44),
+                color: Colors.white,
                 fontWeight: FontWeight.w700,
                 fontSize: 12,
               ),
@@ -680,73 +657,80 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return _HoverLift(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                color,
-                Color.alphaBlend(const Color(0xFF1E7AE7).withOpacity(0.30), color),
+    return SizedBox(
+      width: 420,
+      child: _HoverLift(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(28),
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  color,
+                  const Color(0xFF0F1A34),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: Colors.white.withOpacity(0.18)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x1A5EC7FF),
+                  blurRadius: 22,
+                  offset: Offset(0, 16),
+                ),
               ],
             ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1A2E90FA),
-                blurRadius: 18,
-                offset: Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.20),
-                  borderRadius: BorderRadius.circular(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(Icons.auto_awesome, color: Colors.white),
                 ),
-                child: const Icon(Icons.auto_awesome, color: Colors.white),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      style: TextStyle(color: Colors.white.withOpacity(0.92)),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: Color(0xFFD7E4F8),
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
+                const SizedBox(width: 10),
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF2E90FA)),
                 ),
-                child: const Icon(Icons.chevron_right, color: Color(0xFF2E90FA)),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -758,67 +742,66 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return _HoverLift(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.82),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0xFFDEE9F7)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0F2E90FA),
-                blurRadius: 12,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(14),
+    return SizedBox(
+      width: 420,
+      child: _HoverLift(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(28),
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: Colors.white.withOpacity(0.12)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(Icons.edit_note_rounded, color: Colors.white),
                 ),
-                child: const Icon(Icons.edit, color: Color(0xFF111827)),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF111827),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(color: Color(0xFF6B7280)),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: Color(0xFFB5C5DA),
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF111827),
-                  borderRadius: BorderRadius.circular(18),
+                const SizedBox(width: 10),
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.arrow_forward_rounded, color: Colors.white),
                 ),
-                child: const Icon(Icons.chevron_right, color: Colors.white),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

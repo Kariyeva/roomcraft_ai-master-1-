@@ -218,11 +218,21 @@ class _AiCreateScreenState extends State<AiCreateScreen> {
     final Color previewAccent = _accentColor(selectedStyle);
     final Color previewOverlay = _overlayColor(selectedStyle);
     final bool hasImage = selectedImageBytes != null;
-
     final bool canGenerate =
         hasImage &&
         !isGenerating &&
         (selectedStyle != null || promptController.text.trim().isNotEmpty);
+
+    final List<String> roomTypes = const [
+      'Гостиная',
+      'Спальня',
+      'Кухня',
+      'Детская',
+      'Кабинет',
+      'Другое',
+    ];
+
+    final List<String> budgets = const ['Эконом', 'Средний', 'Премиум'];
 
     return Scaffold(
       body: Stack(
@@ -234,149 +244,111 @@ class _AiCreateScreenState extends State<AiCreateScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFFF5F8FF),
-                    Color(0xFFEAF4FF),
-                    Color(0xFFF4F1FF),
+                    Color(0xFF050B16),
+                    Color(0xFF0A1730),
+                    Color(0xFF091622),
                   ],
                 ),
               ),
             ),
           ),
           Positioned(
-            top: -40,
-            right: -30,
+            top: -120,
+            right: -100,
             child: Container(
-              width: 240,
-              height: 240,
+              width: 360,
+              height: 360,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF7DC1FF).withOpacity(0.20),
+                color: const Color(0xFF31A0FF).withOpacity(0.18),
               ),
             ),
           ),
           Positioned(
-            bottom: 30,
-            left: -80,
+            bottom: -80,
+            left: -90,
             child: Container(
-              width: 260,
-              height: 260,
+              width: 330,
+              height: 330,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFB39DFF).withOpacity(0.16),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 120,
-            right: 24,
-            child: Opacity(
-              opacity: 0.08,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.auto_awesome_rounded, color: Color(0xFF2E90FA), size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'RoomCraft AI',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                  ],
-                ),
+                color: const Color(0xFF687BFF).withOpacity(0.14),
               ),
             ),
           ),
           SafeArea(
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
               children: [
-                AppBar(
-                  automaticallyImplyLeading: false,
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  title: const Text(
-                    'Создать дизайн',
-                    style: TextStyle(
-                      color: Color(0xFF111827),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  centerTitle: true,
-                ),
-                const SizedBox(height: 12),
                 Row(
-                  children: const [
-                    Text(
-                      '1. Загрузите фото',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
                     ),
-                    SizedBox(width: 10),
-                    Chip(
-                      label: Text(
-                        'ОБЯЗАТЕЛЬНО',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                    const Spacer(),
+                    const Text(
+                      'RoomCraft AI',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
                       ),
-                      backgroundColor: Color(0xFFE8F1FF),
                     ),
                   ],
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Создать новый интерьер',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Загрузите фото, задайте стиль и создайте готовую концепцию комнаты за минуты.',
+                  style: TextStyle(
+                    color: Color(0xFFB5C5DA),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _FeatureCard(
+                  icon: Icons.photo_camera_back_outlined,
+                  title: 'Шаг 1 · Фото комнаты',
+                  subtitle: 'Загрузите планировку или реальное фото комнаты',
                 ),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    SizedBox(width: 170, child: _FeatureCard(icon: Icons.auto_awesome, title: 'ИИ-помощник', subtitle: 'Текстовый запрос')),
-                    SizedBox(width: 170, child: _FeatureCard(icon: Icons.photo_camera_back_outlined, title: 'Фото комнаты', subtitle: 'Сохранить план')),
-                    SizedBox(width: 170, child: _FeatureCard(icon: Icons.currency_exchange, title: 'Бюджет', subtitle: 'С учётом цены')),
-                    SizedBox(width: 170, child: _FeatureCard(icon: Icons.compare_arrows_rounded, title: '3 варианта', subtitle: 'Выбрать лучший')),
-                  ],
-                ),
-                const SizedBox(height: 18),
                 if (!hasImage)
                   _HoverLift(
                     child: InkWell(
                       onTap: isGenerating ? null : _pickImage,
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(26),
                       child: Container(
                         padding: const EdgeInsets.all(22),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.80),
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(color: const Color(0xFFDBE4F0)),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x0F2E90FA),
-                              blurRadius: 16,
-                              offset: Offset(0, 10),
-                            ),
-                          ],
+                          color: Colors.white.withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(color: Colors.white.withOpacity(0.12)),
                         ),
                         child: Column(
                           children: const [
-                            Icon(Icons.cloud_upload_outlined, size: 42, color: Color(0xFF2E90FA)),
+                            Icon(Icons.cloud_upload_outlined, size: 42, color: Colors.white),
                             SizedBox(height: 12),
                             Text(
-                              'Нажмите, чтобы загрузить фото\nкомнаты',
+                              'Загрузите фотографию комнаты',
                               textAlign: TextAlign.center,
-                              style: TextStyle(fontWeight: FontWeight.w700),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
                             ),
                             SizedBox(height: 8),
                             Text(
                               'PNG, JPG или HEIC (до 10MB)',
-                              style: TextStyle(color: Color(0xFF6B7280)),
+                              style: TextStyle(color: Color(0xFFB5C5DA)),
                             ),
                           ],
                         ),
@@ -388,21 +360,14 @@ class _AiCreateScreenState extends State<AiCreateScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.82),
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: const Color(0xFFDBE4F0)),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x0F2E90FA),
-                            blurRadius: 16,
-                            offset: Offset(0, 10),
-                          ),
-                        ],
+                        color: Colors.white.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(26),
+                        border: Border.all(color: Colors.white.withOpacity(0.12)),
                       ),
                       child: Column(
                         children: [
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(20),
                             child: Stack(
                               children: [
                                 Image.memory(
@@ -420,7 +385,7 @@ class _AiCreateScreenState extends State<AiCreateScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.92),
+                                        color: Colors.black.withOpacity(0.3),
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: Text(
@@ -429,32 +394,6 @@ class _AiCreateScreenState extends State<AiCreateScreen> {
                                           color: previewAccent,
                                           fontWeight: FontWeight.w800,
                                         ),
-                                      ),
-                                    ),
-                                  ),
-                                if (selectedStyle != null)
-                                  Positioned(
-                                    left: 12,
-                                    bottom: 12,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.92),
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.auto_awesome, size: 16, color: previewAccent),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            _previewLabel(selectedStyle!),
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w700,
-                                              color: Color(0xFF111827),
-                                            ),
-                                          ),
-                                        ],
                                       ),
                                     ),
                                   ),
@@ -468,17 +407,14 @@ class _AiCreateScreenState extends State<AiCreateScreen> {
                                 child: OutlinedButton.icon(
                                   onPressed: isGenerating ? null : _removeImage,
                                   style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Color(0xFFDBE4F0)),
+                                    side: const BorderSide(color: Colors.white24),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                     padding: const EdgeInsets.symmetric(vertical: 14),
                                   ),
-                                  icon: const Icon(Icons.delete_outline, color: Color(0xFF111827)),
+                                  icon: const Icon(Icons.delete_outline, color: Colors.white),
                                   label: const Text(
                                     'Удалить',
-                                    style: TextStyle(
-                                      color: Color(0xFF111827),
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
                                   ),
                                 ),
                               ),
@@ -501,24 +437,94 @@ class _AiCreateScreenState extends State<AiCreateScreen> {
                       ),
                     ),
                   ),
-                const SizedBox(height: 20),
-                const Text('2. Опишите интерьер', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 18),
+                _FeatureCard(
+                  icon: Icons.home_work_outlined,
+                  title: 'Шаг 2 · Тип помещения',
+                  subtitle: 'Выберите комнату, которую вы хотите оформить',
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: roomTypes.map((room) {
+                    return _StyleChip(
+                      text: room,
+                      isSelected: false,
+                      onTap: () {},
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 18),
+                _FeatureCard(
+                  icon: Icons.palette_outlined,
+                  title: 'Шаг 3 · Стиль интерьера',
+                  subtitle: 'Выберите визуальный стиль для вашей комнаты',
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: styles.map((style) {
+                    final isSelected = selectedStyle == style;
+                    return _StyleChip(
+                      text: style,
+                      isSelected: isSelected,
+                      onTap: () {
+                        if (isGenerating) return;
+                        setState(() => selectedStyle = style);
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 18),
+                _FeatureCard(
+                  icon: Icons.currency_exchange,
+                  title: 'Шаг 4 · Бюджет',
+                  subtitle: 'Учитывайте смету при генерации рекомендаций',
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: budgets.map((item) {
+                    return _StyleChip(
+                      text: item,
+                      isSelected: false,
+                      onTap: () {},
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 18),
+                _FeatureCard(
+                  icon: Icons.auto_awesome,
+                  title: 'Шаг 5 · ИИ-помощник',
+                  subtitle: 'Опишите желаемый интерьер и его детали',
+                ),
                 const SizedBox(height: 10),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.82),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFDBE4F0)),
+                    color: const Color(0xFF0D1E38),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFF29486F)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x1A3F7CCF),
+                        blurRadius: 18,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
                   ),
                   child: TextField(
                     controller: promptController,
                     enabled: !isGenerating,
-                    maxLines: 3,
+                    maxLines: 4,
+                    style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
-                      hintText: 'Например: уютная гостиная в скандинавском стиле с тёплым светом и растениями',
-                      hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                      hintText: 'Например: светлая спальня в стилe минимализм, тёплое освещение, натуральные материалы',
+                      hintStyle: TextStyle(color: Color(0xFF9FB2CF)),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(14),
+                      contentPadding: EdgeInsets.all(16),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -528,38 +534,19 @@ class _AiCreateScreenState extends State<AiCreateScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _PromptChip(text: 'уютно', onTap: () => _appendPrompt('уютно')),
-                    _PromptChip(text: 'светло', onTap: () => _appendPrompt('светло')),
-                    _PromptChip(text: 'современно', onTap: () => _appendPrompt('современно')),
-                    _PromptChip(text: 'с растениями', onTap: () => _appendPrompt('с растениями')),
-                    _PromptChip(text: 'тёплый свет', onTap: () => _appendPrompt('тёплый свет')),
-                    _PromptChip(text: 'минимализм', onTap: () => _appendPrompt('минимализм')),
+                    _PromptChip(text: 'Сделать комнату светлее', onTap: () => _appendPrompt('Сделать комнату светлее')),
+                    _PromptChip(text: 'Добавить хранения', onTap: () => _appendPrompt('Добавить хранения')),
+                    _PromptChip(text: 'Сделать уютнее', onTap: () => _appendPrompt('Сделать уютнее')),
+                    _PromptChip(text: 'Больше пространства', onTap: () => _appendPrompt('Больше пространства')),
+                    _PromptChip(text: 'Натуральные материалы', onTap: () => _appendPrompt('Натуральные материалы')),
+                    _PromptChip(text: 'Тёплое освещение', onTap: () => _appendPrompt('Тёплое освещение')),
                   ],
                 ),
                 const SizedBox(height: 22),
-                const Text('3. Выберите стиль', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: styles.map((style) {
-                    final isSelected = selectedStyle == style;
-
-                    return _StyleChip(
-                      text: style,
-                      isSelected: isSelected,
-                      onTap: () {
-                        if (isGenerating) return;
-                        setState(() { selectedStyle = style; });
-                      },
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 28),
                 _HoverLift(
                   child: SizedBox(
                     width: double.infinity,
-                    height: 56,
+                    height: 60,
                     child: ElevatedButton.icon(
                       onPressed: canGenerate ? _generateDesign : null,
                       style: ElevatedButton.styleFrom(
@@ -573,13 +560,9 @@ class _AiCreateScreenState extends State<AiCreateScreen> {
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
-                          : const Icon(Icons.auto_awesome),
+                          : const Icon(Icons.auto_awesome_rounded),
                       label: Text(
-                        isGenerating
-                            ? 'Генерируем...'
-                            : promptController.text.trim().isNotEmpty
-                                ? 'Создать интерьер'
-                                : 'Сгенерировать дизайн',
+                        isGenerating ? 'Создаём ваш интерьер…' : 'Создать дизайн с ИИ',
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                       ),
                     ),
@@ -683,25 +666,29 @@ class _StyleChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF2E90FA) : Colors.white.withOpacity(0.82),
+            color: isSelected
+                ? const Color(0xFF2E90FA)
+                : const Color(0xFF11243D),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: isSelected
                   ? const Color(0xFF2E90FA)
-                  : const Color(0xFFDBE4F0),
+                  : const Color(0xFF2C4A6B),
             ),
-            boxShadow: isSelected ? const [
-              BoxShadow(
-                color: Color(0x1A2E90FA),
-                blurRadius: 12,
-                offset: Offset(0, 6),
-              ),
-            ] : null,
+            boxShadow: isSelected
+                ? const [
+                    BoxShadow(
+                      color: Color(0x1A2E90FA),
+                      blurRadius: 12,
+                      offset: Offset(0, 6),
+                    ),
+                  ]
+                : null,
           ),
           child: Text(
             text,
             style: TextStyle(
-              color: isSelected ? Colors.white : const Color(0xFF111827),
+              color: isSelected ? Colors.white : const Color(0xFFD9E8FF),
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
             ),
           ),
@@ -726,14 +713,14 @@ class _PromptChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.78),
+            color: const Color(0xFF12233F),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0xFFDBE4F0)),
+            border: Border.all(color: const Color(0xFF2A456A)),
           ),
           child: Text(
             text,
             style: const TextStyle(
-              color: Color(0xFF111827),
+              color: Color(0xFFD9E8FF),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -760,12 +747,12 @@ class _FeatureCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.78),
+          color: const Color(0xFF102540),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFDBE4F0)),
+          border: Border.all(color: const Color(0xFF2A456A)),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x0F2E90FA),
+              color: Color(0x1A2E90FA),
               blurRadius: 10,
               offset: Offset(0, 6),
             ),
@@ -778,10 +765,10 @@ class _FeatureCard extends StatelessWidget {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF5FF),
+                color: const Color(0xFF17355E),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 18, color: const Color(0xFF2E90FA)),
+              child: Icon(icon, size: 18, color: const Color(0xFF8FC5FF)),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -792,7 +779,7 @@ class _FeatureCard extends StatelessWidget {
                     title,
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF1F2A44),
+                      color: Colors.white,
                       fontSize: 12,
                     ),
                   ),
@@ -800,7 +787,7 @@ class _FeatureCard extends StatelessWidget {
                   Text(
                     subtitle,
                     style: const TextStyle(
-                      color: Color(0xFF74809A),
+                      color: Color(0xFFB5C5DA),
                       fontSize: 11,
                     ),
                   ),

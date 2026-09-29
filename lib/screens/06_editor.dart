@@ -544,107 +544,99 @@ class _EditorScreenState extends State<EditorScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFFF5F8FF),
-                    Color(0xFFEAF3FF),
-                    Color(0xFFF3F0FF),
+                    Color(0xFF050B16),
+                    Color(0xFF0A1730),
+                    Color(0xFF091622),
                   ],
                 ),
               ),
             ),
           ),
           Positioned(
-            top: -60,
-            right: -40,
+            top: -120,
+            right: -80,
             child: Container(
-              width: 220,
-              height: 220,
+              width: 300,
+              height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF7AB6FF).withOpacity(0.18),
+                color: const Color(0xFF37A0FF).withOpacity(0.18),
               ),
             ),
           ),
           Positioned(
-            bottom: 80,
-            left: -80,
+            bottom: -100,
+            left: -90,
             child: Container(
-              width: 260,
-              height: 260,
+              width: 320,
+              height: 320,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFB39DFF).withOpacity(0.14),
+                color: const Color(0xFF5B7BFF).withOpacity(0.14),
               ),
             ),
           ),
           SafeArea(
             child: Column(
               children: [
-                AppBar(
-                  automaticallyImplyLeading: false,
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
-                    onPressed: () => Navigator.pop(context),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                      ),
+                      const Spacer(),
+                      const Text(
+                        'Редактор комнаты',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: _undoLastItem,
+                        icon: const Icon(Icons.undo_rounded, color: Colors.white70),
+                      ),
+                    ],
                   ),
-                  title: const Text(
-                    'Редактор комнаты',
-                    style: TextStyle(
-                      color: Color(0xFF111827),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  actions: [
-                    IconButton(
-                      onPressed: _undoLastItem,
-                      icon: const Icon(Icons.undo, color: Color(0xFF111827)),
-                    ),
-                  ],
                 ),
                 Expanded(
                   child: Container(
-                    margin: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.78),
-                      borderRadius: BorderRadius.circular(26),
-                      border: Border.all(color: const Color(0xFFDCE9F8)),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x0F2E90FA),
-                          blurRadius: 16,
-                          offset: Offset(0, 12),
-                        ),
-                      ],
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: Colors.white.withOpacity(0.12)),
                     ),
                     child: selectedImageBytes == null
                         ? _HoverLift(
                             child: InkWell(
                               onTap: _pickImage,
-                              borderRadius: BorderRadius.circular(26),
+                              borderRadius: BorderRadius.circular(28),
                               child: const Center(
                                 child: Padding(
                                   padding: EdgeInsets.all(24),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(
-                                        Icons.cloud_upload_outlined,
-                                        size: 42,
-                                        color: Color(0xFF2E90FA),
-                                      ),
+                                      Icon(Icons.cloud_upload_outlined, size: 42, color: Colors.white),
                                       SizedBox(height: 14),
                                       Text(
-                                        'Нажмите, чтобы загрузить фото\nкомнаты для ручного редактирования',
+                                        'Загрузите фото комнаты для ручного редактирования',
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontWeight: FontWeight.w700,
-                                          color: Color(0xFF111827),
+                                          color: Colors.white,
                                         ),
                                       ),
                                       SizedBox(height: 8),
                                       Text(
                                         'PNG, JPG или HEIC',
-                                        style: TextStyle(color: Color(0xFF9CA3AF)),
+                                        style: TextStyle(color: Color(0xFFB5C5DA)),
                                       ),
                                     ],
                                   ),
@@ -653,7 +645,7 @@ class _EditorScreenState extends State<EditorScreen> {
                             ),
                           )
                         : ClipRRect(
-                            borderRadius: BorderRadius.circular(26),
+                            borderRadius: BorderRadius.circular(28),
                             child: LayoutBuilder(
                               builder: (context, constraints) {
                                 final areaSize = Size(
@@ -693,11 +685,7 @@ class _EditorScreenState extends State<EditorScreen> {
                                         child: GestureDetector(
                                           onTap: () => _selectPlacedItem(item.id),
                                           onPanUpdate: (details) {
-                                            _movePlacedItem(
-                                              item.id,
-                                              details.delta,
-                                              areaSize,
-                                            );
+                                            _movePlacedItem(item.id, details.delta, areaSize);
                                           },
                                           child: _draggablePlacedObject(
                                             item: item,
@@ -719,9 +707,9 @@ class _EditorScreenState extends State<EditorScreen> {
                 Container(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.78),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-                    border: const Border.fromBorderSide(BorderSide(color: Color(0xFFDCE9F8))),
+                    color: Colors.white.withOpacity(0.04),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
                   ),
                   child: Column(
                     children: [
@@ -743,19 +731,19 @@ class _EditorScreenState extends State<EditorScreen> {
                       const SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
-                        height: 44,
+                        height: 46,
                         child: _HoverLift(
                           child: OutlinedButton.icon(
                             onPressed: _pickCustomItemImage,
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFF2E90FA)),
+                              side: const BorderSide(color: Colors.white24),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             ),
-                            icon: const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF2E90FA)),
-                            label: Text(
-                              'Добавить предмет в раздел «$selectedTab»',
-                              style: const TextStyle(
-                                color: Color(0xFF2E90FA),
+                            icon: const Icon(Icons.add_photo_alternate_outlined, color: Colors.white),
+                            label: const Text(
+                              'Добавить предмет',
+                              style: TextStyle(
+                                color: Colors.white,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),

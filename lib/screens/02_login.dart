@@ -106,22 +106,22 @@ class _LoginScreenState extends State<LoginScreen> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(color: Color(0xFF9AA4B2)),
-            prefixIcon: Icon(icon, color: Color(0xFF7D8AA0)),
+            prefixIcon: Icon(icon, color: Color(0xFF6F7EA3)),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: const Color(0xFFF7FAFF),
             contentPadding: const EdgeInsets.symmetric(vertical: 18),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
+              borderSide: const BorderSide(color: Color(0xFFDAE7F9)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
+              borderSide: const BorderSide(color: Color(0xFFDAE7F9)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(
-                color: Color(0xFF2E90FA),
+                color: Color(0xFF3A6FCB),
                 width: 1.5,
               ),
             ),
@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFF6F8FC), Color(0xFFEAF4FF), Color(0xFFF5F0FF)],
+            colors: [Color(0xFFF1F5FA), Color(0xFFEAEFFF), Color(0xFFF3F0FF)],
           ),
         ),
         child: SafeArea(
@@ -162,12 +162,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Container(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F6FA),
+                        color: const Color(0xFFF4F8FF),
                         borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: const Color(0xFFD9E5F8), width: 1.1),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x1A1F2A44),
-                            blurRadius: 16,
+                            color: Color(0x1A2E90FA),
+                            blurRadius: 18,
                             spreadRadius: 0.5,
                             offset: Offset(0, 10),
                           ),
