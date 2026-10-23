@@ -1,229 +1,57 @@
 # RoomCraft AI
 
-RoomCraft AI is a modern Flutter-based interior design application that helps users redesign rooms using AI and a manual 2D editor. The app lets users upload a room photo, describe changes in natural language, generate multiple design options, and then fine-tune the result with a custom room editor.
+Flutter-приложение для интерьерных концепций с Firebase Auth / Firestore и Node.js / Replicate backend.
 
-The project combines:
-- Flutter mobile/web client
-- Firebase Authentication and Firestore
-- Express backend for AI generation and image processing
-- Replicate-powered image generation
-- Manual room arrangement tools for furniture, decor, and lighting
+Реализованы главная страница, дизайн-система, кабинет дизайнера, список проектов и мастер создания. Проекты используют прежний `savedWorks`, сохраняя чтение старых работ. [Аудит](docs/AUDIT.md) · [Отчёт второго этапа и список файлов](docs/STAGE_2.md).
 
-## Project goals
+## Запуск Flutter
 
-- Make room redesign simple and visual
-- Allow quick AI-assisted interior concept generation
-- Support custom manual room editing
-- Save and reopen user projects
-- Provide a premium, polished UX for a modern interior design tool
+Использован Flutter 3.47.5 / Dart 3.13.4. Минимальный Dart по pubspec: 3.11.
 
-## Key features
-
-### 1. AI room generation
-- Upload a room photo
-- Add a description of the desired change
-- Choose a style
-- Generate multiple design options
-- Review the resulting concept directly in the app
-
-### 2. Budget-aware design flow
-- The app includes budget-related logic and premium design cards to support more realistic interior decisions
-
-### 3. Multiple style variants
-- Users can generate and compare several visual directions for the same room
-
-### 4. Manual 2D editor
-- Add furniture, decor, light, and textile items
-- Move, resize, and rotate placed objects
-- Create custom asset items from uploaded images
-- Save the final room composition
-
-### 5. User accounts and saved projects
-- Firebase authentication
-- Cloud Firestore data for saved works
-- Save and reopen previous interior concepts
-
-### 6. Premium UI design
-- Soft gradients
-- Glass-like translucent panels
-- White and blue luxury-inspired palette
-- Hover animations and modern card-based layout
-
-## Tech stack
-
-### Frontend
-- Flutter
-- Dart
-- Material Design widgets
-
-### Backend
-- Node.js
-- Express.js
-- Multer for uploads
-- Firebase Admin SDK
-- Replicate API for image generation
-
-### Database / Auth
-- Firebase Authentication
-- Firestore
-
-### Other tools
-- File picker and image upload support
-- Base64 image handling and preview rendering
-
-## Project structure
-
-```text
-roomcraft_ai-master-1-
-├── android/
-├── ios/
-├── linux/
-├── macos/
-├── windows/
-├── web/
-├── lib/
-│   ├── app.dart
-│   ├── main.dart
-│   ├── firebase_options.dart
-│   ├── models/
-│   ├── platform/
-│   ├── screens/
-│   ├── services/
-│   ├── theme/
-│   └── widgets/
-├── backend/
-│   ├── server.js
-│   ├── package.json
-│   └── generated/
-├── analysis_options.yaml
-├── firebase.json
-├── pubspec.yaml
-├── README.md
-└── .gitignore
-```
-
-## Screens included
-
-- Splash screen
-- Login / registration
-- Mode selection
-- AI room generation form
-- Result screen
-- Manual room editor
-- Profile screen
-
-## Main app flow
-
-1. User logs in
-2. Chooses between AI mode and manual mode
-3. Uploads a room photo or starts with a blank design
-4. Enters a prompt and style preferences
-5. Generates a concept or customizes the room manually
-6. Saves the final design and revisits it later
-
-## Getting started
-
-### Requirements
-
-- Flutter SDK 3.11+
-- Dart SDK compatible with the project
-- Node.js 18+
-- Firebase project
-- Replicate API token
-
-### 1. Install Flutter dependencies
-
-```bash
+```sh
 flutter pub get
+flutter run -d chrome --web-port 7357 --dart-define=API_BASE_URL=http://localhost:3000
 ```
 
-### 2. Start the backend
+Публичная страница открывается на `/`. После входа — кабинет `/mode`; коллекция — `/projects`, мастер — `/project/new`, профиль — `/profile`. Firebase использует имеющийся `lib/firebase_options.dart`. Проект создаётся после четырёх шагов; AI запускается отдельно со страницы сохранённого проекта.
 
-```bash
+```sh
+flutter analyze
+flutter test
+flutter build web --release
+```
+
+Результат сборки: `build/web`. Публикация не выполнялась.
+
+## Backend: этап 3, часть 1
+
+[Отчёт о безопасности и обязательные ручные действия](docs/SECURITY_STAGE_3.md). Новая AI Studio ещё не реализуется. AI по умолчанию выключен до проверки server-only журнала, правил и аккаунтов.
+
+Нужен Node.js 22+ и актуальное обновление Node. Подготовьте `backend/.env` из `.env.example`, credentials Firebase вне git и Replicate token в серверном окружении. Не передавайте секреты в чат или Flutter dart-define.
+
+```sh
 cd backend
-npm install
-cp .env.example .env
-```
-
-Then set the required environment variables in `backend/.env`:
-
-```env
-PORT=3000
-REPLICATE_API_TOKEN=your_replicate_token
-FIREBASE_SERVICE_ACCOUNT_PATH=path/to/serviceAccountKey.json
-```
-
-Then run:
-
-```bash
+npm ci
+npm test
 npm start
 ```
 
-### 3. Run the Flutter app
+Начальная конфигурация `AI_ENABLED=false`, `AI_LEDGER_RULES_CONFIRMED=false`. В Render вручную задаются environment, Secret File и точные ALLOWED_ORIGINS; `render.yaml` не развёрнут. Перед включением обязательно прочитайте раздел проверки Rules в отчёте.
 
-```bash
-flutter run -d chrome
+Flutter и редактор используют единый публичный `API_BASE_URL`. Без dart-define платные запросы запрещены. Генерация комнаты требует сохранённого проекта. Ответ — защищённая операция с polling и base64-изображением; старый публичный `/generated` больше не раздаётся. Старые URL требуют инвентаризации до rollout.
+
+```sh
+flutter build web --release --dart-define=API_BASE_URL=https://YOUR-STAGING-API.example
 ```
 
-You can also run on Android/iOS if configured on your environment.
+URL API не секрет. Firebase ID token получается во время работы из Firebase Auth. Токен Replicate находится только на backend.
 
-## Firebase setup
+## Проверки и ограничения
 
-This project uses Firebase for:
-- Authentication
-- Firestore storage
-- User-specific saved works
+Второй этап: `flutter analyze` — без замечаний; `flutter test` — 33 успешных теста, включая адаптивность 320/375/768/1024/1440 px; release Web собирается. Полный отчёт и границы проверок — [STAGE_2.md](docs/STAGE_2.md).
 
-Make sure your Firebase project is configured and that the generated Firebase files are present, including:
-- `android/app/google-services.json`
-- `lib/firebase_options.dart`
+Firebase-записи, правила двух пользователей и реальная платная AI-генерация требуют ручной проверки с тестовыми аккаунтами. Тесты используют хранилище в памяти и не доказывают работоспособность production. Публикация не выполнялась.
 
-## Backend notes
+Проекты и прежние работы живут в одной коллекции `users/{uid}/savedWorks`. Миграция прежних документов не требуется. Фото оптимизируется до 1600 px / 220 КБ; полноценный файловый Storage и история версий — следующий этап. Для создания нужен интернет. Подробнее о дополнительных полях и совместимости правил — в отчёте.
 
-The backend is responsible for:
-- receiving uploaded room images
-- preparing the generation prompt
-- sending requests to Replicate AI
-- saving generated result files
-- serving generated images from `/generated`
-
-## Example user flow
-
-```text
-Login -> Select mode -> Upload room -> Describe design -> Generate -> Review results -> Save work
-```
-
-## Current status
-
-This project is in active development and includes:
-- AI room generation flow
-- manual 2D room editor
-- saved designs
-- Firebase-backed user logic
-- premium redesigned UI
-
-## Development notes
-
-The app is designed to be extended with:
-- more furniture categories
-- richer AI prompt presets
-- better background removal tools
-- image export and sharing
-- design history and revisions
-
-## Contact / project ownership
-
-This project is a personal/portfolio-style interior design app built with Flutter and AI-powered room editing tools.
-
-## Next possible improvements
-
-- add real product recommendation system
-- support more item categories
-- improve AI generation quality
-- implement more advanced room segmentation
-- add multi-language support
-- add premium user dashboard
-
----
-
-This README is intended as a clear project overview for developers, contributors, and collaborators working on RoomCraft AI.
+Этап 3, часть 1: backend 22 passed / 1 emulator test skipped; Flutter 41 passed; npm audit — 0 известных уязвимостей. Платная генерация, live Firebase и Render не проверены. Детали и точные границы проверок — в [отчёте](docs/SECURITY_STAGE_3.md).

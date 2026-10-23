@@ -1,5 +1,5 @@
+// ignore_for_file: file_names
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 
+import '../widgets/editor_icons.dart';
 import '../platform/file_helper.dart';
 import '../services/saved_works_service.dart';
 
@@ -33,7 +34,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
     if (!hasImage || imagePath == null) {
       return Container(
-        color: const Color(0xFFE9EEF6),
+        color: const Color(0xFFE8E2D8),
         child: const Center(
           child: Icon(Icons.image, size: 64, color: Color(0xFFB8C4D6)),
         ),
@@ -48,15 +49,15 @@ class _ResultScreenState extends State<ResultScreen> {
           if (loadingProgress == null) return child;
 
           return Container(
-            color: const Color(0xFFE9EEF6),
+            color: const Color(0xFFE8E2D8),
             child: const Center(
-              child: CircularProgressIndicator(color: Color(0xFF2E90FA)),
+              child: CircularProgressIndicator(color: Color(0xFF282B25)),
             ),
           );
         },
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: const Color(0xFFE9EEF6),
+            color: const Color(0xFFE8E2D8),
             child: const Center(
               child: Icon(
                 Icons.broken_image,
@@ -74,7 +75,7 @@ class _ResultScreenState extends State<ResultScreen> {
         imagePath,
         fit: BoxFit.cover,
         fallback: Container(
-          color: const Color(0xFFE9EEF6),
+          color: const Color(0xFFE8E2D8),
           child: const Center(
             child: Icon(Icons.image, size: 64, color: Color(0xFFB8C4D6)),
           ),
@@ -83,7 +84,7 @@ class _ResultScreenState extends State<ResultScreen> {
     }
 
     return Container(
-      color: const Color(0xFFE9EEF6),
+      color: const Color(0xFFE8E2D8),
       child: const Center(
         child: Icon(Icons.image, size: 64, color: Color(0xFFB8C4D6)),
       ),
@@ -145,6 +146,10 @@ class _ResultScreenState extends State<ResultScreen> {
     required List<Map<String, dynamic>> placedItems,
   }) async {
     if (_isSaving) return;
+    final routeArgs =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final projectId = routeArgs?['projectId'] as String?;
+    final projectOwnerId = routeArgs?['projectOwnerId'] as String?;
 
     setState(() => _isSaving = true);
 
@@ -181,18 +186,33 @@ class _ResultScreenState extends State<ResultScreen> {
         }
       }
 
-      await SavedWorksService.saveWork(
-        SavedWork(
-          imagePath: imagePath ?? '',
-          imageBase64: thumbnailBase64,
-          style: selectedStyle,
-          mode: mode,
-          dateLabel: dateLabel,
-          prompt: prompt,
-          description: description,
-          placedItems: placedItems,
-        ),
+      final work = SavedWork(
+        imagePath: imagePath ?? '',
+        imageBase64: thumbnailBase64,
+        thumbnailBase64: isManual && capturedBytes != null
+            ? _makeThumbnailBase64(capturedBytes) ?? ''
+            : '',
+        style: selectedStyle,
+        mode: mode,
+        dateLabel: dateLabel,
+        prompt: prompt,
+        description: description,
+        placedItems: placedItems,
       );
+      if (projectId != null) {
+        if (projectOwnerId == null) {
+          throw StateError(
+            'Не указан владелец проекта. Откройте проект заново.',
+          );
+        }
+        await SavedWorksService.saveProjectResult(
+          projectId,
+          work,
+          expectedUid: projectOwnerId,
+        );
+      } else {
+        await SavedWorksService.saveWork(work);
+      }
 
       if (!context.mounted) return;
 
@@ -202,7 +222,9 @@ class _ResultScreenState extends State<ResultScreen> {
             ? 'Сохранено в галерею. Войдите в аккаунт, чтобы хранить работы в профиле'
             : 'Войдите в аккаунт, чтобы сохранить работу в профиль';
       } else if (kIsWeb) {
-        message = 'Работа сохранена в профиль (Последние работы)';
+        message = projectId == null
+            ? 'Работа сохранена в личном кабинете'
+            : 'Результат сохранён в проект';
       } else {
         message = savedToDevice
             ? 'Работа сохранена в галерею и профиль'
@@ -250,7 +272,8 @@ class _ResultScreenState extends State<ResultScreen> {
             .toList() ??
         [];
 
-    final bool isManual = selectedStyle == 'Ручной режим';
+    final bool isManual =
+        selectedStyle == 'Ручной режим' || args?['mode'] == 'Ручной режим';
     final String mode = isManual ? 'Ручной режим' : 'ИИ дизайн комнаты';
 
     final Color accentColor = _accentColor(selectedStyle);
@@ -276,18 +299,29 @@ class _ResultScreenState extends State<ResultScreen> {
     final dateLabel = '$day $month';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: const Color(0xFFF7F5F0),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF6F7FB),
+        actions: [
+          IconButton(
+            tooltip: 'Личный кабинет',
+            onPressed: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/mode',
+              (_) => false,
+            ),
+            icon: const Icon(Icons.space_dashboard_outlined),
+          ),
+        ],
+        backgroundColor: const Color(0xFFF7F5F0),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF282B25)),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Результат',
           style: TextStyle(
-            color: Color(0xFF111827),
+            color: Color(0xFF282B25),
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -304,7 +338,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 borderRadius: BorderRadius.circular(26),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 18,
                     offset: const Offset(0, 10),
                   ),
@@ -353,7 +387,7 @@ class _ResultScreenState extends State<ResultScreen> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.92),
+                              color: Colors.white.withValues(alpha: 0.92),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Row(
@@ -371,7 +405,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                   mode,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF111827),
+                                    color: Color(0xFF282B25),
                                   ),
                                 ),
                               ],
@@ -391,7 +425,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.92),
+                                color: Colors.white.withValues(alpha: 0.92),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Text(
@@ -420,7 +454,7 @@ class _ResultScreenState extends State<ResultScreen> {
               borderRadius: BorderRadius.circular(22),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 16,
                   offset: const Offset(0, 8),
                 ),
@@ -438,7 +472,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF111827),
+                          color: Color(0xFF282B25),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -448,7 +482,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             : selectedStyle != 'Не выбран'
                             ? 'Сгенерировано в стиле\n$selectedStyle'
                             : 'Сгенерировано по вашему\nAI-запросу',
-                        style: const TextStyle(color: Color(0xFF6B7280)),
+                        style: const TextStyle(color: Color(0xFF716D63)),
                       ),
                       if (prompt.isNotEmpty) ...[
                         const SizedBox(height: 10),
@@ -457,7 +491,7 @@ class _ResultScreenState extends State<ResultScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFFDBE4F0)),
+                            border: Border.all(color: const Color(0xFFD9D6CD)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,14 +501,14 @@ class _ResultScreenState extends State<ResultScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF6B7280),
+                                  color: Color(0xFF716D63),
                                 ),
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 prompt,
                                 style: const TextStyle(
-                                  color: Color(0xFF111827),
+                                  color: Color(0xFF282B25),
                                   height: 1.35,
                                 ),
                               ),
@@ -500,7 +534,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.10),
+                    color: accentColor.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
@@ -530,7 +564,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1F2A37),
+                backgroundColor: const Color(0xFF282B25),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),
@@ -549,23 +583,44 @@ class _ResultScreenState extends State<ResultScreen> {
             width: double.infinity,
             height: 54,
             child: OutlinedButton.icon(
-              onPressed: () {
+              onPressed: () async {
                 if (isManual) {
                   Navigator.pushReplacementNamed(
                     context,
                     '/editor',
                     arguments: {
+                      'projectId': args?['projectId'],
+                      'projectOwnerId': args?['projectOwnerId'],
                       'imagePath': imagePath,
                       'imageBytes': imageBytes,
                       'placedItems': placedItems,
                     },
                   );
                 } else {
+                  final editBytes =
+                      imageBytes ??
+                      (imagePath != null
+                          ? await _downloadBytes(imagePath)
+                          : null);
+                  if (!context.mounted) return;
+                  if (editBytes == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Не удалось загрузить изображение для продолжения.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
                   Navigator.pushReplacementNamed(
                     context,
                     '/ai_create',
                     arguments: {
+                      'projectId': args?['projectId'],
+                      'projectOwnerId': args?['projectOwnerId'],
                       'imagePath': imagePath,
+                      'imageBytes': editBytes,
                       'style': selectedStyle != 'Не выбран'
                           ? selectedStyle
                           : null,
@@ -575,17 +630,17 @@ class _ResultScreenState extends State<ResultScreen> {
                 }
               },
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFDBE4F0)),
+                side: const BorderSide(color: Color(0xFFD9D6CD)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),
               ),
-              icon: const Icon(Icons.refresh, color: Color(0xFF111827)),
+              icon: const Icon(Icons.refresh, color: Color(0xFF282B25)),
               label: const Text(
                 'Переделать',
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF111827),
+                  color: Color(0xFF282B25),
                 ),
               ),
             ),
@@ -611,8 +666,8 @@ class _ResultScreenState extends State<ResultScreen> {
                     )
                   : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E90FA),
-                disabledBackgroundColor: const Color(0xFFBFD9F8),
+                backgroundColor: const Color(0xFF282B25),
+                disabledBackgroundColor: const Color(0xFFD9D6CD),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),
@@ -644,18 +699,18 @@ class _ResultScreenState extends State<ResultScreen> {
                         )
                       : null,
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFDBE4F0)),
+                    side: const BorderSide(color: Color(0xFFD9D6CD)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  icon: const Icon(Icons.download, color: Color(0xFF111827)),
+                  icon: const Icon(Icons.download, color: Color(0xFF282B25)),
                   label: const Text(
                     'Скачать',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
+                      color: Color(0xFF282B25),
                     ),
                   ),
                 ),
@@ -665,18 +720,18 @@ class _ResultScreenState extends State<ResultScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () {},
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFDBE4F0)),
+                    side: const BorderSide(color: Color(0xFFD9D6CD)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  icon: const Icon(Icons.share, color: Color(0xFF111827)),
+                  icon: const Icon(Icons.share, color: Color(0xFF282B25)),
                   label: const Text(
                     'Поделиться',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
+                      color: Color(0xFF282B25),
                     ),
                   ),
                 ),
@@ -732,9 +787,9 @@ class _ResultScreenState extends State<ResultScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.94),
+        color: Colors.white.withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFDBE4F0)),
+        border: Border.all(color: const Color(0xFFD9D6CD)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x14000000),
@@ -749,16 +804,16 @@ class _ResultScreenState extends State<ResultScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              IconData(iconCodePoint, fontFamily: 'MaterialIcons'),
+              editorIcon(iconCodePoint),
               size: 18,
-              color: const Color(0xFF111827),
+              color: const Color(0xFF282B25),
             ),
             const SizedBox(width: 8),
             Text(
               title,
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF111827),
+                color: Color(0xFF282B25),
               ),
             ),
           ],
@@ -770,9 +825,9 @@ class _ResultScreenState extends State<ResultScreen> {
   static Color _accentColor(String style) {
     switch (style) {
       case 'Minimalist':
-        return const Color(0xFF8FAFCF);
+        return const Color(0xFFB6AEA0);
       case 'Modern':
-        return const Color(0xFF2E90FA);
+        return const Color(0xFF282B25);
       case 'Scandi':
         return const Color(0xFF49A58A);
       case 'Classic':
@@ -786,9 +841,9 @@ class _ResultScreenState extends State<ResultScreen> {
       case 'Zen':
         return const Color(0xFF6E9E72);
       case 'Ручной режим':
-        return const Color(0xFF1F2A37);
+        return const Color(0xFF282B25);
       default:
-        return const Color(0xFF2E90FA);
+        return const Color(0xFF282B25);
     }
   }
 

@@ -53,3 +53,12 @@ backend/serviceAccountKey.json
 backend/serviceAccountKey.json
 backend/.env
 .env
+# Server secrets; examples remain reviewable.
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+backend/*service*Account*.json
+backend/service-account*.json
+backend/*credentials*.json

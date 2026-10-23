@@ -1,12 +1,12 @@
 {
-    "name": "roomcraft_ai",
-    "short_name": "roomcraft_ai",
+    "name": "RoomCraft AI",
+    "short_name": "RoomCraft",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#F7F5F0",
+    "theme_color": "#282B25",
+    "description": "RoomCraft AI — создание интерьерных концепций.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

@@ -1,0 +1,30 @@
+# Optional blueprint, NOT deployed by this change. Configure secrets in Render UI.
+services:
+  - type: web
+    name: roomcraft-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_PATH
+        value: /etc/secrets/firebase-service-account.json
+      - key: REPLICATE_API_TOKEN
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: AI_ENABLED
+        value: "false"
+      - key: AI_LEDGER_RULES_CONFIRMED
+        value: "false"
+      - key: AI_USER_DAILY_LIMIT
+        value: "10"
+      - key: AI_GLOBAL_DAILY_LIMIT
+        value: "100"

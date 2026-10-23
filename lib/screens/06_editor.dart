@@ -1,13 +1,15 @@
+// ignore_for_file: file_names
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/ai_backend_client.dart';
 
 import '../models/custom_item.dart';
+import '../widgets/editor_icons.dart';
 import '../platform/file_helper.dart';
 import '../services/custom_items_service.dart';
 
@@ -27,6 +29,8 @@ class _EditorScreenState extends State<EditorScreen> {
   final List<_PlacedItem> placedItems = [];
   final List<CustomItem> customItems = [];
 
+  String? _projectId;
+  String? _projectOwnerId;
   bool _restoredArgs = false;
 
   final Map<String, List<_EditorItem>> itemsByTab = {
@@ -64,6 +68,8 @@ class _EditorScreenState extends State<EditorScreen> {
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
+    _projectId = args?['projectId'] as String?;
+    _projectOwnerId = args?['projectOwnerId'] as String?;
     final Uint8List? imageBytes = args?['imageBytes'] as Uint8List?;
     final List<Map<String, dynamic>> restoredPlacedItems =
         (args?['placedItems'] as List?)
@@ -113,48 +119,37 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
-  static const bool _useLocalBackend = false;
-
-  String get _backendBaseUrl => _useLocalBackend
-      ? 'http://localhost:3000'
-      : 'https://roomcraftai-master-1-production.up.railway.app';
   Future<String?> _removeBackgroundWithReplicate(Uint8List imageBytes) async {
-    try {
-      final uri = Uri.parse('$_backendBaseUrl/remove-background');
-      final request = http.MultipartRequest('POST', uri);
-
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'image',
-          imageBytes,
-          filename: 'custom_item.png',
-        ),
-      );
-
-      final response = await request.send().timeout(
-        const Duration(seconds: 90),
-      );
-      final body = await response.stream.bytesToString();
-
-      if (response.statusCode != 200) {
-        _showSnack('Не удалось удалить фон');
-        debugPrint('Remove background error: $body');
-        return null;
-      }
-
-      final decoded = jsonDecode(body) as Map<String, dynamic>;
-      final imageBase64 = decoded['imageBase64'] as String?;
-
-      if (imageBase64 == null || imageBase64.isEmpty) {
-        _showSnack('Фон не удалён: пустой ответ сервера');
-        return null;
-      }
-
-      return imageBase64;
-    } catch (e) {
-      debugPrint('Remove background exception: $e');
-      _showSnack('Ошибка удаления фона');
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null ||
+        user.isAnonymous ||
+        (_projectId != null && user.uid != _projectOwnerId)) {
+      _showSnack('Войдите в аккаунт для удаления фона.');
       return null;
+    }
+    final client = AiBackendClient(
+      userId: user.uid,
+      getToken: () => user.getIdToken(),
+      isCurrentUser: () =>
+          mounted && FirebaseAuth.instance.currentUser?.uid == user.uid,
+    );
+    try {
+      final result = await client.run(
+        kind: 'background',
+        imageBytes: imageBytes,
+        filename: 'custom_item.png',
+        projectId: _projectId,
+      );
+      return base64Encode(result.bytes);
+    } catch (error) {
+      _showSnack(
+        error is AiApiException
+            ? error.message
+            : 'Не удалось связаться с AI. Повторите тот же запрос позже.',
+      );
+      return null;
+    } finally {
+      client.close();
     }
   }
 
@@ -183,106 +178,78 @@ class _EditorScreenState extends State<EditorScreen> {
       category = 'Мебель';
     }
 
+    if (!mounted) {
+      nameController.dispose();
+      return;
+    }
+
     final saved = await showDialog<bool>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: const Color(0xFFF6F7FB),
-              insetPadding: const EdgeInsets.symmetric(horizontal: 20),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(26),
+                borderRadius: BorderRadius.circular(22),
               ),
               title: const Text(
                 'Добавить предмет',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 28,
-                  color: Color(0xFF1F2A44),
-                ),
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
-              content: SizedBox(
-                width: 460,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: nameController,
-                      style: const TextStyle(color: Color(0xFF1F2A44)),
-                      decoration: InputDecoration(
-                        labelText: 'Название предмета',
-                        labelStyle: const TextStyle(color: Color(0xFF5B6474)),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: category,
-                      style: const TextStyle(color: Color(0xFF1F2A44)),
-                      decoration: InputDecoration(
-                        labelText: 'Категория',
-                        labelStyle: const TextStyle(color: Color(0xFF5B6474)),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      items: itemsByTab.keys
-                          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                          .toList(),
-                      onChanged: (value) {
-                        if (value == null) return;
-                        setDialogState(() {
-                          category = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'После сохранения фон будет автоматически удалён через ИИ.',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                    ),
-                  ],
-                ),
-              ),
-              actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text(
-                    'Отмена',
-                    style: TextStyle(
-                      color: Color(0xFF2E90FA),
-                      fontWeight: FontWeight.w700,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Название предмета',
+                      border: OutlineInputBorder(),
                     ),
                   ),
+                  const SizedBox(height: 14),
+                  DropdownButtonFormField<String>(
+                    initialValue: category,
+                    decoration: const InputDecoration(
+                      labelText: 'Категория',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: itemsByTab.keys
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() {
+                        category = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'После сохранения фон будет автоматически удалён через ИИ.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF716D63)),
+                  ),
+                ],
+              ),
+              actions: [
+                IconButton(
+                  tooltip: 'Личный кабинет',
+                  onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/mode',
+                    (_) => false,
+                  ),
+                  icon: const Icon(Icons.space_dashboard_outlined),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Отмена'),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context, true),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E90FA),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    backgroundColor: const Color(0xFF282B25),
                   ),
-                  child: const Text(
-                    'Сохранить',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: const Text('Сохранить'),
                 ),
               ],
             );
@@ -535,287 +502,265 @@ class _EditorScreenState extends State<EditorScreen> {
     final bool canSave = selectedImageBytes != null && placedItems.isNotEmpty;
 
     return Scaffold(
-      body: Stack(
+      backgroundColor: const Color(0xFFF7F5F0),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF7F5F0),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF282B25)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Редактор комнаты",
+          style: TextStyle(
+            color: Color(0xFF282B25),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        actions: [
+          IconButton(
+            onPressed: _undoLastItem,
+            icon: const Icon(Icons.undo, color: Color(0xFF282B25)),
+          ),
+        ],
+      ),
+      body: Column(
         children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF050B16),
-                    Color(0xFF0A1730),
-                    Color(0xFF091622),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: -120,
-            right: -80,
+          Expanded(
             child: Container(
-              width: 300,
-              height: 300,
+              margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF37A0FF).withOpacity(0.18),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(26),
               ),
-            ),
-          ),
-          Positioned(
-            bottom: -100,
-            left: -90,
-            child: Container(
-              width: 320,
-              height: 320,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF5B7BFF).withOpacity(0.14),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                      ),
-                      const Spacer(),
-                      const Text(
-                        'Редактор комнаты',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
+              child: selectedImageBytes == null
+                  ? InkWell(
+                      onTap: _pickImage,
+                      borderRadius: BorderRadius.circular(26),
+                      child: const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.cloud_upload_outlined,
+                                size: 42,
+                                color: Color(0xFF282B25),
+                              ),
+                              SizedBox(height: 14),
+                              Text(
+                                "Нажмите, чтобы загрузить фото\nкомнаты для ручного редактирования",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF282B25),
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                "PNG, JPG или HEIC",
+                                style: TextStyle(color: Color(0xFF9CA3AF)),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: _undoLastItem,
-                        icon: const Icon(Icons.undo_rounded, color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: Colors.white.withOpacity(0.12)),
-                    ),
-                    child: selectedImageBytes == null
-                        ? _HoverLift(
-                            child: InkWell(
-                              onTap: _pickImage,
-                              borderRadius: BorderRadius.circular(28),
-                              child: const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(24),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.cloud_upload_outlined, size: 42, color: Colors.white),
-                                      SizedBox(height: 14),
-                                      Text(
-                                        'Загрузите фото комнаты для ручного редактирования',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        'PNG, JPG или HEIC',
-                                        style: TextStyle(color: Color(0xFFB5C5DA)),
-                                      ),
-                                    ],
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(26),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final areaSize = Size(
+                            constraints.maxWidth,
+                            constraints.maxHeight,
+                          );
+
+                          return Stack(
+                            children: [
+                              Positioned.fill(
+                                child: Image.memory(
+                                  selectedImageBytes!,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 12,
+                                right: 12,
+                                child: Row(
+                                  children: [
+                                    _topActionButton(
+                                      icon: Icons.delete_outline,
+                                      onTap: _removeImage,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _topActionButton(
+                                      icon: Icons.edit_outlined,
+                                      onTap: _pickImage,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ...placedItems.map(
+                                (item) => Positioned(
+                                  left: item.x * areaSize.width,
+                                  top: item.y * areaSize.height,
+                                  child: GestureDetector(
+                                    onTap: () => _selectPlacedItem(item.id),
+                                    onPanUpdate: (details) {
+                                      _movePlacedItem(
+                                        item.id,
+                                        details.delta,
+                                        areaSize,
+                                      );
+                                    },
+                                    child: _draggablePlacedObject(
+                                      item: item,
+                                      onDelete: () =>
+                                          _removePlacedItem(item.id),
+                                      onIncrease: () =>
+                                          _resizePlacedItem(item.id, 0.1),
+                                      onDecrease: () =>
+                                          _resizePlacedItem(item.id, -0.1),
+                                      onRotate: () =>
+                                          _rotatePlacedItem(item.id),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(28),
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final areaSize = Size(
-                                  constraints.maxWidth,
-                                  constraints.maxHeight,
-                                );
-
-                                return Stack(
-                                  children: [
-                                    Positioned.fill(
-                                      child: Image.memory(
-                                        selectedImageBytes!,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 12,
-                                      right: 12,
-                                      child: Row(
-                                        children: [
-                                          _topActionButton(
-                                            icon: Icons.delete_outline,
-                                            onTap: _removeImage,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          _topActionButton(
-                                            icon: Icons.edit_outlined,
-                                            onTap: _pickImage,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    ...placedItems.map(
-                                      (item) => Positioned(
-                                        left: item.x * areaSize.width,
-                                        top: item.y * areaSize.height,
-                                        child: GestureDetector(
-                                          onTap: () => _selectPlacedItem(item.id),
-                                          onPanUpdate: (details) {
-                                            _movePlacedItem(item.id, details.delta, areaSize);
-                                          },
-                                          child: _draggablePlacedObject(
-                                            item: item,
-                                            onDelete: () => _removePlacedItem(item.id),
-                                            onIncrease: () => _resizePlacedItem(item.id, 0.1),
-                                            onDecrease: () => _resizePlacedItem(item.id, -0.1),
-                                            onRotate: () => _rotatePlacedItem(item.id),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+            ),
+            child: Column(
+              children: [
+                if (_selectedPlacedItem != null) ...[
+                  _objectAdjustPanel(_selectedPlacedItem!),
+                  const SizedBox(height: 12),
+                ],
+                Row(
+                  children: [
+                    _tab(
+                      "Мебель",
+                      selected: selectedTab == 'Мебель',
+                      onTap: () => setState(() => selectedTab = 'Мебель'),
+                    ),
+                    const SizedBox(width: 8),
+                    _tab(
+                      "Декор",
+                      selected: selectedTab == 'Декор',
+                      onTap: () => setState(() => selectedTab = 'Декор'),
+                    ),
+                    const SizedBox(width: 8),
+                    _tab(
+                      "Свет",
+                      selected: selectedTab == 'Свет',
+                      onTap: () => setState(() => selectedTab = 'Свет'),
+                    ),
+                    const SizedBox(width: 8),
+                    _tab(
+                      "Текстиль",
+                      selected: selectedTab == 'Текстиль',
+                      onTap: () => setState(() => selectedTab = 'Текстиль'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: _pickCustomItemImage,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF282B25)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.add_photo_alternate_outlined,
+                      color: Color(0xFF282B25),
+                    ),
+                    label: Text(
+                      "Добавить предмет в раздел «$selectedTab»",
+                      style: const TextStyle(
+                        color: Color(0xFF282B25),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.04),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
-                  ),
-                  child: Column(
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 104,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
                     children: [
-                      if (_selectedPlacedItem != null) ...[
-                        _objectAdjustPanel(_selectedPlacedItem!),
-                        const SizedBox(height: 12),
-                      ],
-                      Row(
-                        children: [
-                          _tab('Мебель', selected: selectedTab == 'Мебель', onTap: () => setState(() => selectedTab = 'Мебель')),
-                          const SizedBox(width: 8),
-                          _tab('Декор', selected: selectedTab == 'Декор', onTap: () => setState(() => selectedTab = 'Декор')),
-                          const SizedBox(width: 8),
-                          _tab('Свет', selected: selectedTab == 'Свет', onTap: () => setState(() => selectedTab = 'Свет')),
-                          const SizedBox(width: 8),
-                          _tab('Текстиль', selected: selectedTab == 'Текстиль', onTap: () => setState(() => selectedTab = 'Текстиль')),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 46,
-                        child: _HoverLift(
-                          child: OutlinedButton.icon(
-                            onPressed: _pickCustomItemImage,
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.white24),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            ),
-                            icon: const Icon(Icons.add_photo_alternate_outlined, color: Colors.white),
-                            label: const Text(
-                              'Добавить предмет',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
+                      ...currentItems.map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: _catalogIconItem(
+                            title: item.title,
+                            icon: item.icon,
+                            onTap: () => _addItem(item),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 104,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            ...currentItems.map(
-                              (item) => Padding(
-                                padding: const EdgeInsets.only(right: 12),
-                                child: _catalogIconItem(
-                                  title: item.title,
-                                  icon: item.icon,
-                                  onTap: () => _addItem(item),
-                                ),
-                              ),
-                            ),
-                            ...currentCustomItems.map(
-                              (item) => Padding(
-                                padding: const EdgeInsets.only(right: 12),
-                                child: _catalogCustomItem(
-                                  item: item,
-                                  onTap: () => _addCustomItem(item),
-                                  onDelete: () => _deleteCustomItem(item),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _HoverLift(
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: ElevatedButton.icon(
-                            onPressed: canSave
-                                ? () {
-                                    Navigator.of(context).pushNamed(
-                                      '/result',
-                                      arguments: {
-                                        'style': 'Ручной режим',
-                                        'imagePath': null,
-                                        'imageBytes': selectedImageBytes,
-                                        'imageName': selectedImageName,
-                                        'placedItems': _buildPlacedItemsArgs(),
-                                      },
-                                    );
-                                  }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2E90FA),
-                              disabledBackgroundColor: const Color(0xFFBFD9F8),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                            ),
-                            icon: const Icon(Icons.save),
-                            label: const Text(
-                              'Сохранить комнату',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                              ),
-                            ),
+                      ...currentCustomItems.map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: _catalogCustomItem(
+                            item: item,
+                            onTap: () => _addCustomItem(item),
+                            onDelete: () => _deleteCustomItem(item),
                           ),
                         ),
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton.icon(
+                    onPressed: canSave
+                        ? () {
+                            Navigator.of(context).pushNamed(
+                              '/result',
+                              arguments: {
+                                'projectId': _projectId,
+                                'projectOwnerId': _projectOwnerId,
+                                'style': 'Ручной режим',
+                                'imagePath': null,
+                                'imageBytes': selectedImageBytes,
+                                'imageName': selectedImageName,
+                                'placedItems': _buildPlacedItemsArgs(),
+                              },
+                            );
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF282B25),
+                      disabledBackgroundColor: const Color(0xFFD9D6CD),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    icon: const Icon(Icons.save),
+                    label: const Text(
+                      "Сохранить комнату",
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
                   ),
                 ),
               ],
@@ -832,7 +777,7 @@ class _EditorScreenState extends State<EditorScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFDBE4F0)),
+        border: Border.all(color: const Color(0xFFD9D6CD)),
       ),
       child: Column(
         children: [
@@ -895,14 +840,14 @@ class _EditorScreenState extends State<EditorScreen> {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: Colors.white.withOpacity(0.92),
+      color: Colors.white.withValues(alpha: 0.92),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.all(10),
-          child: Icon(icon, color: const Color(0xFF111827)),
+          child: Icon(icon, color: const Color(0xFF282B25)),
         ),
       ),
     );
@@ -933,9 +878,9 @@ class _EditorScreenState extends State<EditorScreen> {
     } else {
       content = Container(
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.94),
+          color: Colors.white.withValues(alpha: 0.94),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFDBE4F0)),
+          border: Border.all(color: const Color(0xFFD9D6CD)),
           boxShadow: const [
             BoxShadow(
               color: Color(0x14000000),
@@ -950,19 +895,16 @@ class _EditorScreenState extends State<EditorScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                IconData(
-                  item.iconCodePoint ?? Icons.category.codePoint,
-                  fontFamily: 'MaterialIcons',
-                ),
+                editorIcon(item.iconCodePoint),
                 size: 18,
-                color: const Color(0xFF111827),
+                color: const Color(0xFF282B25),
               ),
               const SizedBox(width: 8),
               Text(
                 item.title,
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF111827),
+                  color: Color(0xFF282B25),
                 ),
               ),
             ],
@@ -1004,7 +946,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       child: const Icon(
                         Icons.close,
                         size: 16,
-                        color: Color(0xFF111827),
+                        color: Color(0xFF282B25),
                       ),
                     ),
                   ),
@@ -1056,10 +998,10 @@ class _EditorScreenState extends State<EditorScreen> {
         height: 30,
         margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: const BoxDecoration(
-          color: Color(0xFFF3F4F6),
+          color: Color(0xFFF7F5F0),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 17, color: Color(0xFF111827)),
+        child: Icon(icon, size: 17, color: Color(0xFF282B25)),
       ),
     );
   }
@@ -1070,24 +1012,22 @@ class _EditorScreenState extends State<EditorScreen> {
     required VoidCallback onTap,
   }) {
     return Expanded(
-      child: _HoverLift(
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(999),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              color: selected ? const Color(0xFF111827) : const Color(0xFFF3F4F6),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: selected ? Colors.white : const Color(0xFF111827),
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? const Color(0xFF282B25) : const Color(0xFFF7F5F0),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: selected ? Colors.white : const Color(0xFF282B25),
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
             ),
           ),
         ),
@@ -1100,37 +1040,28 @@ class _EditorScreenState extends State<EditorScreen> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return _HoverLift(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          width: 96,
-          height: 96,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.82),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFEEF2F7)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0F2E90FA),
-                blurRadius: 10,
-                offset: Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: const Color(0xFF111827)),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
-              ),
-            ],
-          ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        width: 96,
+        height: 96,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F5F0),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFEEF2F7)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: const Color(0xFF282B25)),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
+            ),
+          ],
         ),
       ),
     );
@@ -1168,9 +1099,9 @@ class _EditorScreenState extends State<EditorScreen> {
             height: 96,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF6F7FB),
+              color: const Color(0xFFF7F5F0),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFDBE4F0)),
+              border: Border.all(color: const Color(0xFFD9D6CD)),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1213,7 +1144,7 @@ class _EditorScreenState extends State<EditorScreen> {
               child: const Icon(
                 Icons.close,
                 size: 16,
-                color: Color(0xFF111827),
+                color: Color(0xFF282B25),
               ),
             ),
           ),
@@ -1228,33 +1159,6 @@ class _EditorItem {
   final IconData icon;
 
   const _EditorItem(this.title, this.icon);
-}
-
-class _HoverLift extends StatefulWidget {
-  final Widget child;
-
-  const _HoverLift({required this.child});
-
-  @override
-  State<_HoverLift> createState() => _HoverLiftState();
-}
-
-class _HoverLiftState extends State<_HoverLift> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
-        child: widget.child,
-      ),
-    );
-  }
 }
 
 class _PlacedItem {

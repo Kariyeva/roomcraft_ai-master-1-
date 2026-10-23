@@ -1,12 +1,15 @@
 import 'dart:convert';
+import '../models/project_details.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SavedWork {
+  final ProjectDetails? project;
   final String imagePath;
 
   final String imageBase64;
+  final String thumbnailBase64;
 
   final String style;
   final String mode;
@@ -18,7 +21,9 @@ class SavedWork {
 
   const SavedWork({
     required this.imagePath,
+    this.project,
     this.imageBase64 = '',
+    this.thumbnailBase64 = '',
     required this.style,
     required this.mode,
     required this.dateLabel,
@@ -28,10 +33,27 @@ class SavedWork {
     this.placedItems = const [],
   });
 
+  String get title =>
+      project?.title ??
+      (style.isNotEmpty
+          ? '$style · $mode'
+          : mode.isNotEmpty
+          ? mode
+          : 'Сохранённая работа');
+  String get status => project?.status ?? 'ready';
+  String get statusLabel => project?.statusLabel ?? 'Концепция готова';
+  String get previewBase64 => thumbnailBase64.isNotEmpty
+      ? thumbnailBase64
+      : imageBase64.isNotEmpty
+      ? imageBase64
+      : project?.sourceImageBase64 ?? '';
+
   Map<String, dynamic> toMap({required String currentUserId}) {
     return {
+      if (project != null) 'project': project!.toMap(),
       'imagePath': imagePath,
       'imageBase64': imageBase64,
+      if (thumbnailBase64.isNotEmpty) 'thumbnailBase64': thumbnailBase64,
       'style': style,
       'mode': mode,
       'dateLabel': dateLabel,
@@ -80,13 +102,22 @@ class SavedWork {
       return [];
     }
 
-    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return list
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
   }
 
   factory SavedWork.fromMap(Map<String, dynamic> map) {
     return SavedWork(
+      project: map['project'] is Map
+          ? ProjectDetails.fromMap(
+              Map<String, dynamic>.from(map['project'] as Map),
+            )
+          : null,
       imagePath: map['imagePath'] ?? '',
       imageBase64: map['imageBase64'] ?? '',
+      thumbnailBase64: map['thumbnailBase64'] ?? '',
       style: map['style'] ?? '',
       mode: map['mode'] ?? '',
       dateLabel: map['dateLabel'] ?? '',
@@ -170,13 +201,107 @@ class SavedWorksService {
     });
   }
 
+  static void _checkSize(Map<String, dynamic> data) {
+    final measurable = {...data, 'createdAt': null, 'updatedAt': null};
+    if (utf8
+            .encode(
+              jsonEncode(
+                measurable,
+                toEncodable: (value) => value is Timestamp
+                    ? value.toDate().toIso8601String()
+                    : value.toString(),
+              ),
+            )
+            .length >
+        850000) {
+      throw StateError(
+        'Изображение слишком большое для сохранения. Уменьшите фото.',
+      );
+    }
+  }
+
+  static Future<String> createProject(
+    SavedWork work, {
+    required String expectedUid,
+    required String requestId,
+  }) async {
+    if (_uid != expectedUid) {
+      throw StateError('Аккаунт изменился. Войдите снова.');
+    }
+    final ref = _worksRef;
+    if (ref == null) {
+      throw StateError('Войдите в аккаунт для сохранения проекта.');
+    }
+    final data = work.toMap(currentUserId: expectedUid);
+    _checkSize(data);
+    final doc = ref.doc(requestId);
+    // Online transaction avoids indefinitely queued offline saves. A retry from
+    // the same wizard keeps its ID and cannot create a duplicate project.
+    await _firestore.runTransaction(
+      (transaction) async {
+        final existing = await transaction.get(doc);
+        if (!existing.exists) transaction.set(doc, data);
+      },
+      timeout: const Duration(seconds: 20),
+      maxAttempts: 3,
+    );
+    return doc.id;
+  }
+
+  /// Update only the result fields; keep the original brief, photo and createdAt.
+  static Future<void> saveProjectResult(
+    String id,
+    SavedWork work, {
+    required String expectedUid,
+  }) async {
+    if (_uid != expectedUid) {
+      throw StateError('Аккаунт изменился. Войдите снова.');
+    }
+    final ref = _worksRef;
+    if (ref == null) {
+      throw StateError('Войдите в аккаунт для сохранения проекта.');
+    }
+    await _firestore.runTransaction((transaction) async {
+      final doc = ref.doc(id);
+      final snapshot = await transaction.get(doc);
+      if (!snapshot.exists) {
+        throw StateError('Проект удалён. Результат не сохранён.');
+      }
+      final data = projectResultUpdate(snapshot.data()!, work, expectedUid);
+      transaction.update(doc, data);
+    });
+  }
+
+  /// Pure serialization boundary, shared by the transaction and compatibility tests.
+  static Map<String, dynamic> projectResultUpdate(
+    Map<String, dynamic> previous,
+    SavedWork work,
+    String owner,
+  ) {
+    final data = work.toMap(currentUserId: owner)..remove('createdAt');
+    data.remove('project');
+    data['thumbnailBase64'] = work.thumbnailBase64;
+    final metadata = previous['project'];
+    if (metadata is Map) {
+      data['project'] = {
+        ...Map<String, dynamic>.from(metadata),
+        'status': 'ready',
+      };
+    }
+    data['updatedAt'] = FieldValue.serverTimestamp();
+    _checkSize({...previous, ...data});
+    return data;
+  }
+
   static Future<void> saveWork(SavedWork work) async {
     final ref = _worksRef;
     final uid = _uid;
 
     if (ref == null || uid == null) return;
 
-    await ref.add(work.toMap(currentUserId: uid));
+    final data = work.toMap(currentUserId: uid);
+    _checkSize(data);
+    await ref.add(data);
   }
 
   static Future<void> deleteWork(String workId) async {
